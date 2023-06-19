@@ -200,8 +200,8 @@
               const nodesById = Object.fromEntries(sData.nodes.map(node => [node.id, node]));
   
               sData.links.forEach(link => {
-                const a = nodesById[link.source];
-                const b = nodesById[link.target];
+                const a = nodesById[link.source.id];
+                const b = nodesById[link.target.id];
 
                 !a.neighbors && (a.neighbors = []);
                 !b.neighbors && (b.neighbors = []);
