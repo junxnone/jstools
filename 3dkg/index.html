@@ -133,8 +133,10 @@
             );
           })        
           .linkWidth(link => highlightLinks.has(link) ? 2 : 1)
-          .linkDirectionalParticles(link => highlightLinks.has(link) ? 2 : 0)
-          .linkDirectionalParticleWidth(2)
+          .linkDirectionalParticles(link => highlightLinks.has(link) ? 4 : 0)
+          .linkDirectionalParticleWidth(3)
+          .linkDirectionalParticleResolution(10)
+          .linkDirectionalParticleSpeed(0.005)
           .onNodeHover(node => {
             // no state change
             if ((!node && !highlightNodes.size) || (node && hoverNode === node)) return;
