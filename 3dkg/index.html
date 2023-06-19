@@ -107,9 +107,9 @@
             clearTimeout(timer);
             doubleclick = false;
             //double click
- 
+            node.expand = !node.expand;
             update_visible(node);
-            node.visible = !node.visible;
+            node.visible = true;
             Graph.nodeVisibility(node => node.visible)
                    .linkVisibility(link=> link.source.visible && link.target.visible)
           }
@@ -256,14 +256,17 @@
           }
 
           function update_visible(snode){
-            console.log(snode);
-            (function traverseTree(node = snode) {
-              node.visible = !node.visible;
-              node.childLinks.forEach(link => link.visible = !link.visible)
+            var visible = snode.expand; 
+
+            function traverseTree(node, svisible) {
+              node.visible = svisible;//!node.visible;
+              node.childLinks.forEach(link => link.visible = svisible)
               node.childLinks
                 .map(link => ((typeof link.target) === 'object') ? link.target : nodesById[link.target]) // get child node
-                .forEach(update_visible);
-            })(); 
+                .forEach(node => traverseTree(node, svisible));
+            }
+            traverseTree(snode, visible);
+
           }
   
           function focusonnode(node){
