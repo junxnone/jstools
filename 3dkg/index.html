@@ -112,6 +112,19 @@
             }
           }
         })
+        .onBackgroundClick(node => {
+          clearTimeout(timer);
+          timer = setTimeout(function(){
+              //single click
+          }, 500)
+          if(doubleclick) {
+            clearTimeout(timer);
+            doubleclick = false;
+            //double click
+            let nodenum = Graph.graphData().nodes.length
+            Graph.cameraPosition({x:0,y:0,z:Math.cbrt(nodenum) * 170},{x:0,y:0,z:0},2000)
+          }
+        })
         .onNodeDragEnd(node => {
             node.fx = node.x;
             node.fy = node.y;
