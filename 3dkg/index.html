@@ -31,11 +31,11 @@
     .search-input-text {
       border: 0px;
       float: left;
-      height: 50px;
+      height: 25px;
       line-height: 25px;
       outline: none;
-      width: 200px;
-      font-size: 20px;
+      width: 100px;
+      font-size: 10px;
       border-radius: 5px;
     }
 
@@ -240,12 +240,11 @@
       const nodes = titlesnodes.concat(idsnodes);
 
       if (nodes.length > 0) {
-        if (nodes.length > searchi) {
-          focusonnode(nodes[searchi]);
-        } else {
+        if (searchi >= nodes.length ) {
           searchi = 0;
-          focusonnode(nodes[searchi]);
         }
+        focusonnode(nodes[searchi]);
+        expand_collapse(nodes[searchi]);
       } else {
         tempAlert("啥也没找到!", 2000);
 
@@ -289,6 +288,21 @@
         node, // lookAt ({ x, y, z })
         3000  // ms transition duration
       );
+    }
+    function expand_collapse(node){
+      node.expand = !node.expand;
+      update_visible(node);
+      node.visible = true;
+      Graph.nodeVisibility(node => node.visible)
+        .linkVisibility(link => link.source.visible && link.target.visible)
+        setTimeout(function () {
+          //single click
+          node.expand = !node.expand;
+          update_visible(node);
+          node.visible = true;
+          Graph.nodeVisibility(node => node.visible)
+            .linkVisibility(link => link.source.visible && link.target.visible)
+        }, 2000)
     }
   </script>
   <script type="module">
