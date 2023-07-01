@@ -17,3 +17,10 @@ https://junxnone.github.io/jstools/mdmarkmap/?md=your_markdown_url
 ```
 
 - [demo](https://junxnone.github.io/jstools/mdmarkmap/?md=https://junxnone.github.io/twiki/0016_Features)
+
+
+
+## Timeline
+
+- [demo for default file](https://junxnone.github.io/jstools/timeline)
+- [demo for url file](https://junxnone.github.io/jstools/timeline?json=https://raw.githubusercontent.com/junxnone/tl/main/data/chinamars.json)
