@@ -35,7 +35,11 @@
 </head>
 
 <body>
-
+<p>
+  <input type="button" id="prev" value=" < ">
+  <input type="button" id="first" value=" First ">
+  <input type="button" id="next" value=" > "><br>
+</p>
   <div id="visualization"></div>
   <div id="loading">loading...</div>
 
@@ -118,6 +122,23 @@
         var groups = new vis.DataSet(groupsdata);
         // Create a Timeline
         var timeline = new vis.Timeline(container, items, groups, options);
+        var fid = 0;
+        document.getElementById('next').onclick = function() {
+          fid = fid +1;
+          timeline.setSelection(fid);
+          timeline.focus([fid], {animation: {duration: 200, easingFunction: 'easeInOutQuint'},zoom:false}); // ms
+        };
+        document.getElementById('prev').onclick = function() {
+          fid = fid - 1;
+          if(fid == 0){fid = 1};
+          timeline.setSelection(fid);
+          timeline.focus([fid], {animation: {duration: 200, easingFunction: 'easeInOutQuint'},zoom:false}); // ms
+        };
+        document.getElementById('first').onclick = function() {
+          fid = 0;
+          timeline.setSelection(fid);
+          timeline.focus([fid], {animation: {duration: 200, easingFunction: 'easeInOutQuint'},zoom:false}); // ms
+        };
       },
       error: function (err) {
         console.log('Error', err);
