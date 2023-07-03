@@ -90,8 +90,8 @@
 
             for (var line = 1; line < lines.length - 1; line++) {
                 if (lines[line].match(/ /g) != null) {
-                    mdnodes.push({ 'id': line, 'title': lines[line].split("- ")[1], 'group': 0, 'url': "xxx", 'visible': true, 'expand': true, 'childLinks': [], neighbors: [], 'links': [] })
                     nodecnow = (lines[line].match(/ /g).length - 1) / 2
+                    mdnodes.push({ 'id': line, 'title': lines[line].split("- ")[1], 'group': nodecnow, 'url': "xxx", 'visible': true, 'expand': true, 'childLinks': [], neighbors: [], 'links': [] })
 
                     if(nodecnow == 0) {
                         mdlinks.push({ 'source': 0, 'target': line })
