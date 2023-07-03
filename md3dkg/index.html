@@ -77,12 +77,15 @@
             const reqUrl = kgfile
                 ? new URL(kgfile)
                 : new URL("README.md", document.location);
-            console.log(reqUrl)
             const req = new Request(reqUrl);
             const res = await fetch(req);
             text = await res.text();
             lines = text.split(/\r\n|\n/);
-            mdnodes.push({ id: 0, title: lines[0].split("# ")[1], 'group': 0, 'url': "xxx", 'visible': true, 'expand': true, 'childLinks': [], neighbors: [], 'links': [] })
+            roottitle = lines[0].split("# ")[1]
+            if(roottitle == null){
+                roottitle = "root"
+            }
+            mdnodes.push({ id: 0, title: roottitle, 'group': 0, 'url': "xxx", 'visible': true, 'expand': true, 'childLinks': [], neighbors: [], 'links': [] })
             var nodecnow = 0
             var nodecprev = 0
             var nodecprevid = []
@@ -96,16 +99,18 @@
                     if(nodecnow == 0) {
                         mdlinks.push({ 'source': 0, 'target': line })
                     } else {
-                        if(nodecnow > nodecprev){
-                            mdlinks.push({ 'source': line-1, 'target': line })
-                            nodecprevid.push(line)
-                        }
                         if(nodecnow == nodecprev){
                             mdlinks.push({ 'source': nodecprevid.slice(-1)[0], 'target': line })
                         }
                         if(nodecnow < nodecprev){
-                            nodecprevid.pop()
+                            if(nodecprev.length >1) {
+                                nodecprevid.pop()
+                            }
                             mdlinks.push({ 'source': nodecprevid.slice(-1)[0], 'target': line })
+                        }
+                        if(nodecnow > nodecprev){
+                            mdlinks.push({ 'source': line-1, 'target': line })
+                            nodecprevid.push(line-1)
                         }
                     }
                     nodecprev = nodecnow;
@@ -120,11 +125,9 @@
             setTimeout(() => {
 
                 const nodesById = Object.fromEntries(gData.nodes.map(node => [node.id, node]));
-
                 gData.links.forEach(link => {
                     const a = nodesById[link.source];
                     const b = nodesById[link.target];
-
                     !a.neighbors && (a.neighbors = []);
                     !b.neighbors && (b.neighbors = []);
                     a.neighbors.push(b);
@@ -137,14 +140,13 @@
                     gData.nodes[link.source].childLinks.push(link);
                 });
                 Graph.graphData(gData);
-            }, 2000);
+            }, 500);
         }
         main().catch((e) => console.error(e));
 
         let highlightNodes = new Set();
         let highlightLinks = new Set();
         let hoverNode = null;
-        var sData = {};
 
         var doubleclick = false;
         var timer;
