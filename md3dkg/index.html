@@ -110,19 +110,22 @@
                     mdnodes.push({ 'id': line, 'title': nodetitle, 'group': nodecnow, 'url': nodeurl, 'visible': true, 'expand': true, 'childLinks': [], neighbors: [], 'links': [] })
 
                     if(nodecnow == 0) {
-                        mdlinks.push({ 'source': 0, 'target': line })
+                        mdlinks.push({ 'source': 0, 'target': line, 'target': line, "visible": true, "expand": true, "value": nodecnow  })
                     } else {
                         if(nodecnow == nodecprev){
-                            mdlinks.push({ 'source': nodecprevid.slice(-1)[0], 'target': line })
+                            mdlinks.push({ 'source': nodecprevid.slice(-1)[0], 'target': line, "visible": true, "expand": true, "value": nodecnow })
                         }
                         if(nodecnow < nodecprev){
-                            if(nodecprevid.length >1) {
+                            
+                            if(nodecprevid.length > 1) {
+                                //console.log(nodecprevid.slice(-1)[0])
                                 nodecprevid.pop()
                             }
-                            mdlinks.push({ 'source': nodecprevid.slice(-1)[0], 'target': line })
+                            //console.log(nodecprevid.slice(-1)[0])
+                            mdlinks.push({ 'source': nodecprevid.slice(-1)[0], 'target': line, "visible": true, "expand": true, "value": nodecnow})
                         }
                         if(nodecnow > nodecprev){
-                            mdlinks.push({ 'source': line-1, 'target': line })
+                            mdlinks.push({ 'source': line-1, 'target': line , "visible": true, "expand": true, "value": nodecnow})
                             nodecprevid.push(line-1)
                         }
                     }
