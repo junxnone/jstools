@@ -94,7 +94,11 @@
             var nodetitle = ''
             for (var line = 1; line < lines.length - 1; line++) {
                 if (lines[line].match(/ /g) != null) {
-                    nodecnow = (lines[line].match(/ /g).length - 1) / 2
+                    if(lines[line].match(/  /g) != null) {
+                        nodecnow = lines[line].match(/  /g).length + 1
+                    } else {
+                        nodecnow = 1
+                    }
                     if(lines[line].endsWith(')')){
                         nodeurl = lines[line].split(/\[|\]|\(|\)/)[3]
                         nodetitle = lines[line].split(/\[|\]|\(|\)/)[1]
