@@ -102,6 +102,9 @@
                     if(lines[line].endsWith(')')){
                         nodeurl = lines[line].split(/\[|\]|\(|\)/)[3]
                         nodetitle = lines[line].split(/\[|\]|\(|\)/)[1]
+                    } else {
+                        nodetitle = lines[line].split('- ').slice(-1)
+                        nodeurl = "https://www.baidu.com/s?wd=" + nodetitle;
                     }
                      
                     mdnodes.push({ 'id': line, 'title': nodetitle, 'group': nodecnow, 'url': nodeurl, 'visible': true, 'expand': true, 'childLinks': [], neighbors: [], 'links': [] })
