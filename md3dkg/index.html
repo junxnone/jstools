@@ -103,7 +103,7 @@
                         nodeurl = lines[line].split(/\[|\]|\(|\)/)[3]
                         nodetitle = lines[line].split(/\[|\]|\(|\)/)[1]
                     } else {
-                        nodetitle = lines[line].split('- ').slice(-1)
+                        nodetitle = lines[line].split('- ').slice(-1)[0]
                         nodeurl = "https://www.baidu.com/s?wd=" + nodetitle;
                     }
                      
