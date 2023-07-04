@@ -85,7 +85,7 @@
             if(roottitle == null){
                 roottitle = "root"
             }
-            mdnodes.push({ id: 0, title: roottitle, 'group': 0, 'url': "xxx", 'visible': true, 'expand': true, 'childLinks': [], neighbors: [], 'links': [] })
+            mdnodes.push({ id: 0, title: roottitle, 'group': 0, 'url':  url[1], 'visible': true, 'expand': true, 'childLinks': [], neighbors: [], 'links': [] })
             var nodecnow = 0
             var nodecprev = 0
             var nodecprevid = []
@@ -94,6 +94,9 @@
             for (var line = 1; line < lines.length - 1; line++) {
                 if (lines[line].match(/ /g) != null) {
                     nodecnow = (lines[line].match(/ /g).length - 1) / 2
+                    let url = lines[line].split(/\/|\)/)
+                    mdnodes.push({ 'id': line, 'title': lines[line].split("- ")[1], 'group': nodecnow, 'url': url[1], 'visible': true, 'expand': true, 'childLinks': [], neighbors: [], 'links': [] })
+
                     mdnodes.push({ 'id': line, 'title': lines[line].split("- ")[1], 'group': nodecnow, 'url': "xxx", 'visible': true, 'expand': true, 'childLinks': [], neighbors: [], 'links': [] })
 
                     if(nodecnow == 0) {
