@@ -90,14 +90,17 @@
             var nodecprev = 0
             var nodecprevid = []
             nodecprevid.push(0)
-
+            var nodeurl = ''
+            var nodetitle = ''
             for (var line = 1; line < lines.length - 1; line++) {
                 if (lines[line].match(/ /g) != null) {
                     nodecnow = (lines[line].match(/ /g).length - 1) / 2
-                    let url = lines[line].split(/\/|\)/)
-                    mdnodes.push({ 'id': line, 'title': lines[line].split("- ")[1], 'group': nodecnow, 'url': url[1], 'visible': true, 'expand': true, 'childLinks': [], neighbors: [], 'links': [] })
-
-                    mdnodes.push({ 'id': line, 'title': lines[line].split("- ")[1], 'group': nodecnow, 'url': "xxx", 'visible': true, 'expand': true, 'childLinks': [], neighbors: [], 'links': [] })
+                    if(lines[line].endsWith(')')){
+                        nodeurl = lines[line].split(/\[|\]|\(|\)/)[3]
+                        nodetitle = lines[line].split(/\[|\]|\(|\)/)[1]
+                    }
+                     
+                    mdnodes.push({ 'id': line, 'title': nodetitle, 'group': nodecnow, 'url': nodeurl, 'visible': true, 'expand': true, 'childLinks': [], neighbors: [], 'links': [] })
 
                     if(nodecnow == 0) {
                         mdlinks.push({ 'source': 0, 'target': line })
