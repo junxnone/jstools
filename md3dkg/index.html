@@ -85,6 +85,12 @@
             if(roottitle == null){
                 roottitle = "root"
             }
+            if(roottitle.endsWith(')')){
+                rooturl = roottitle.split(/\[|\]|\(|\)/)[3]
+                roottitle= roottitle.split(/\[|\]|\(|\)/)[1]
+            } else {
+                rooturl = "https://www.baidu.com/";
+            }
             mdnodes.push({ id: 0, title: roottitle, 'group': 0, 'url':  url[1], 'visible': true, 'expand': true, 'childLinks': [], neighbors: [], 'links': [] })
             var nodecnow = 0
             var nodecprev = 0
