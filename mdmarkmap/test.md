@@ -1,10 +1,11 @@
 
 
 ---
-title: Skills
-markmap:
-  spacingHorizontal: 40
-  spacingVertical: 10
+title: Skills  
+markmap:  
+  spacingHorizontal: 40  
+  spacingVertical: 10  
+  initialExpandLevel: 3
 ---
 
 
