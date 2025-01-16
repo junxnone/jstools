@@ -1,5 +1,3 @@
-
-
 ---
 title: Skills  
 markmap:  
