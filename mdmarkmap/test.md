@@ -5,7 +5,7 @@ title: Skills
 markmap:  
   spacingHorizontal: 40  
   spacingVertical: 10  
-  initialExpandLevel: 3
+  initialExpandLevel: 2
 ---
 
 
