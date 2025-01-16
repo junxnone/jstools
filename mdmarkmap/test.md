@@ -1,6 +1,7 @@
-# Skills
+
 
 ---
+title: Skills
 markmap:
   spacingHorizontal: 40
   spacingVertical: 10
