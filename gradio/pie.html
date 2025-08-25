@@ -1,0 +1,193 @@
+<html>
+    <head>
+        <script type="module" crossorigin src="https://cdn.jsdelivr.net/npm/@gradio/lite/dist/lite.js"></script>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@gradio/lite/dist/lite.css" />
+    </head>
+    <body>
+        <gradio-lite>
+import matplotlib.pyplot as plt
+import numpy as np
+import gradio as gr
+import pandas as pd
+
+
+def fig2numpy(fig):
+    """将 matplotlib 图像转换为 numpy 数组（RGB格式）"""
+    # 渲染图像到缓冲区
+    fig.canvas.draw()
+    # 获取图像尺寸
+    width, height = fig.canvas.get_width_height()
+    # 提取像素数据（字符串形式，RGB格式）
+    buf = fig.canvas.tostring_rgb()
+    # 转换为 numpy 数组并调整形状 (height, width, 3)
+    img_array = np.frombuffer(buf, dtype=np.uint8).reshape((height, width, 3))
+    return img_array
+
+
+def gen_image():
+    fig, ax = plt.subplots(figsize=(12, 12))
+    size = 0.3
+
+    vals = np.array([[1., 1.], [1., 1.], [1., 1.]])
+
+    # Outer pie chart
+    outer_labels = ['Category A', 'Category B', 'Category C']
+
+    ax.pie(vals.sum(axis=1), radius=0.6,
+        wedgeprops=dict(width=0.4, edgecolor='none', alpha=0.1, linewidth=0),
+        labeldistance=0.3,
+        rotatelabels=True)
+
+    wedges, texts = ax.pie(vals.sum(axis=1), radius=0.8,
+        wedgeprops=dict(width=0.2, edgecolor='w'),
+        labels=outer_labels, labeldistance=0.8,
+        rotatelabels=True,
+        textprops={'fontsize': 12, 'color': 'black'})
+    for i, text in enumerate(texts):
+
+        # 获取扇形的中心角度（起始角度 + 跨度/2）
+        angle = (wedges[i].theta2 + wedges[i].theta1) / 2 + 90
+        # 设置旋转角度（与扇形角度一致）
+        text.set_rotation(angle)
+        # 若角度过大，文字水平对齐方式调整（避免颠倒）
+        text.set_ha('center')
+        text.set_va('center')
+
+
+    # Inner pie chart
+    inner_labels = ['Sub A1', 'Sub A2', 'Sub B1', 'Sub B2', 'Sub C1', 'Sub C2']
+    wedges, texts = ax.pie(vals.flatten(), radius=1,
+        wedgeprops=dict(width=0.2, edgecolor='w'), colors=['#5DADE2', 'white'],
+        labels=inner_labels, labeldistance=1,
+            pctdistance=0.5, rotatelabels=True,
+        textprops={'fontsize': 12, 'color': 'darkgrey'})
+    wedges[1].set_zorder(0)
+    wedges[1].set_edgecolor('white')
+
+    ax.set(aspect="equal")
+    plt.savefig('test.png')
+    fig.savefig('test.svg')
+
+def parse_markdown_text(markdown_text: str):
+    md_list = markdown_text.split('\n')
+    df = pd.DataFrame(columns=list(range(0,10)))
+
+    super_category = []
+    tmp_list = []
+    s_weight = []
+    t_count = 0
+    upper_category = []
+    for catei in md_list:
+        zero_num_pre = 0
+        if catei.startswith('- '):
+            super_category = [catei.split('- ')[1]]
+            df.loc[t_count] = super_category + list(np.zeros(9, np.uint8))
+        elif catei.startswith(' '):
+            level_num = int(catei.split('- ')[0].count(' ')/2)
+            zero_num = 9 - level_num
+            upper_list = df.loc[t_count-1].tolist()
+            tmp_list = upper_list[0:level_num] + [catei.split('- ')[1]]+ list(np.zeros(zero_num, np.uint8))
+            df.loc[t_count] = tmp_list
+        t_count += 1
+    return df
+
+def gen_image_from_df(df):
+    fig, ax = plt.subplots(figsize=(12, 12))
+    start_radius = 0.6
+    for i in range(len(df.columns)):
+        category_name = list(dict.fromkeys(df.iloc[:,i].tolist()))
+        if 0 in category_name:
+            category_name.remove(0)
+        print(category_name)
+        col = df.iloc[:,i]
+        filter_col = col[col!=0]
+        print(filter_col.value_counts(sort=False).values)
+
+
+        if len(category_name) >0:
+            if i == 0:
+                wedges, texts = ax.pie(filter_col.value_counts(sort=False).values, radius=start_radius,
+                    wedgeprops=dict(width=0.4, edgecolor='w',alpha=0.2, linewidth=0),
+                    rotatelabels=True,
+                    textprops={'fontsize': 12, 'color': 'black'})
+                wedges, texts = ax.pie(filter_col.value_counts(sort=False).values, radius=start_radius + 0.3* (i+1),
+                    wedgeprops=dict(width=0.3, edgecolor='w',alpha=0.5, linewidth=0),
+                    labels=category_name, labeldistance=0.8,
+                    rotatelabels=True,
+                    textprops={'fontsize': 12, 'color': 'black'})
+                for i, text in enumerate(texts):
+
+                    # 获取扇形的中心角度（起始角度 + 跨度/2）
+                    angle = (wedges[i].theta2 + wedges[i].theta1) / 2 + 90
+                    # 设置旋转角度（与扇形角度一致）
+                    text.set_rotation(angle)
+                    # 若角度过大，文字水平对齐方式调整（避免颠倒）
+                    text.set_ha('center')
+                    text.set_va('center')
+            else:
+                wedges, texts = ax.pie(filter_col.value_counts(sort=False).values, radius=start_radius + 0.3* (i+1),
+                    wedgeprops=dict(width=0.3, edgecolor='w',alpha=0.5, linewidth=0),
+                    labels=category_name, labeldistance=0.85,
+                    rotatelabels=True,
+                    textprops={'fontsize': 12, 'color': 'black', 'ha':'center', 'va': 'center','multialignment':'center'})
+                for i, text in enumerate(texts):
+                    # 获取扇形的中心角度（起始角度 + 跨度/2）
+                    angle = (wedges[i].theta2 + wedges[i].theta1) / 2 + 90
+                    # 设置旋转角度（与扇形角度一致）
+                    text.set_rotation_mode('anchor')
+                    text.set_rotation(angle)
+                    # text.set_ha('center')
+                    # text.set_va('top')
+    fig.savefig('test.svg')
+
+
+
+def generate_image_from_markdown(markdown_text: str):
+    cls_df = parse_markdown_text(markdown_text)
+    # gen_image()
+    gen_image_from_df(cls_df)
+    return 'test.svg'    
+
+with gr.Blocks(title="Markdown 文本生成多层环形图") as demo:
+    with gr.Row():
+        with gr.Column(scale=1.1):
+            text_prompt_input = gr.Textbox(
+                label="分类描述 (使用 Markdown List 格式)",
+                lines=20,
+                placeholder="在此输入您的Markdown文本。",
+                value=""
+            )
+            generate_button = gr.Button("🖼️ 生成图片")
+            markdown_input = gr.Markdown(
+                "请在这里输入Markdown格式的分类描述。例如：\n\n"
+                "```markdown\n"
+                "- Category A\n"
+                "  - Sub category A1\n"
+                "  - Sub category A2\n"
+                "  - Sub category A3\n"
+                "- Category B\n"
+                "  - Sub category B1\n"
+                "  - Sub category B2\n"
+                "  - Sub category B3\n"
+                "- Category C\n"
+                "  - Sub category C1\n"
+                "  - Sub category C2\n"
+                "  - Sub category C3\n"
+                "```\n\n"
+                "> `-` 前使用两个空格为前一层级的子类"
+            )
+        with gr.Column(scale=1):
+            loading_indicator = gr.Label("等待输入...", visible=False) # 简单的加载指示器
+            svg_output=gr.Image(label="生成的 SVG 图像", type="filepath")
+
+    generate_button.click(
+        fn=generate_image_from_markdown,
+        inputs=[text_prompt_input],
+        outputs=[svg_output],
+        show_progress="minimal" # 显示最小进度指示器
+    )
+
+demo.launch()
+        </gradio-lite>
+    </body>
+</html>
