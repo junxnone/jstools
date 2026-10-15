@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Mermaid Viewer</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+        html,
+        body {
+            margin: 0;
+            height: 100%;
+            font-family: -apple-system, Segoe UI, Arial, sans-serif;
+            background-color: #fafafa;
+        }
+
+        #divMain {
+            padding: 6px 10px;
+            background: #fff;
+            border-bottom: 1px solid #ddd;
+            font-size: 13px;
+        }
+
+        #container {
+            padding: 10px;
+        }
+
+        .diagram-block {
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            margin-bottom: 16px;
+            background: #fff;
+            overflow: hidden;
+        }
+
+        .diagram-title {
+            padding: 6px 10px;
+            font-size: 13px;
+            color: #555;
+            border-bottom: 1px solid #eee;
+            background: #f5f5f5;
+        }
+
+        .diagram-svg-wrap {
+            width: 100%;
+            height: 70vh;
+        }
+
+        .diagram-svg-wrap svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .error {
+            color: #c00;
+            padding: 10px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="divMain"></div>
+    <div id="container">Loading...</div>
+
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom/dist/svg-pan-zoom.min.js"></script>
+    <script>
+        mermaid.initialize({ startOnLoad: false, securityLevel: "loose" });
+
+        function AppendLink(url) {
+            const div = document.getElementById("divMain");
+            const texth1 = document.createElement("H3");
+            const linkTmp = document.createElement("a");
+            let index = url.lastIndexOf("/");
+            let newUrl = url.substring(0, index) + "/#/" + url.substring(index + 1, url.length);
+            linkTmp.href = newUrl;
+            console.log("add link:" + newUrl);
+            linkTmp.innerText = "Wiki Page";
+            texth1.appendChild(linkTmp);
+            div.appendChild(texth1);
+        }
+
+        function extractMermaidBlocks(md) {
+            const re = /```mermaid\s*\n([\s\S]*?)```/g;
+            const blocks = [];
+            let m;
+            while ((m = re.exec(md)) !== null) {
+                blocks.push(m[1].trim());
+            }
+            return blocks;
+        }
+
+        async function renderDiagrams(blocks) {
+            const container = document.getElementById("container");
+            container.innerHTML = "";
+            if (blocks.length === 0) {
+                container.innerHTML = "<p>No ```mermaid``` code block found in the markdown.</p>";
+                return;
+            }
+            for (let i = 0; i < blocks.length; i++) {
+                const block = document.createElement("div");
+                block.className = "diagram-block";
+
+                const title = document.createElement("div");
+                title.className = "diagram-title";
+                title.innerText = "Diagram " + (i + 1) + " (scroll to zoom, drag to pan)";
+                block.appendChild(title);
+
+                const wrap = document.createElement("div");
+                wrap.className = "diagram-svg-wrap";
+                block.appendChild(wrap);
+
+                container.appendChild(block);
+
+                try {
+                    const { svg } = await mermaid.render("mmd-" + i, blocks[i]);
+                    wrap.innerHTML = svg;
+                    const svgEl = wrap.querySelector("svg");
+                    svgEl.removeAttribute("height");
+                    svgEl.style.maxWidth = "none";
+                    svgPanZoom(svgEl, {
+                        zoomEnabled: true,
+                        controlIconsEnabled: true,
+                        fit: true,
+                        center: true,
+                        minZoom: 0.2,
+                        maxZoom: 20
+                    });
+                } catch (e) {
+                    const err = document.createElement("div");
+                    err.className = "error";
+                    err.innerText = "Render error: " + e.message;
+                    wrap.appendChild(err);
+                }
+            }
+        }
+
+        //process searchparams and get string
+        async function main() {
+            const url = new URL(document.location);
+            let text = "";
+            if (url.searchParams.has("str")) {
+                text = url.searchParams.get("str"); //the param str shouldn't be too long
+            } else {
+                let md = url.searchParams.get("md");
+                if (!md) {
+                    md = "test.md";
+                } else if (!md.endsWith(".md")) {
+                    md = md + ".md";
+                }
+                console.log("render markdown:" + md);
+                AppendLink(md);
+                const reqUrl = new URL(md, document.location);
+                const req = new Request(reqUrl);
+                //need Help: support fetch resources from different site
+                const res = await fetch(req);
+                text = await res.text();
+            }
+            const blocks = extractMermaidBlocks(text);
+            await renderDiagrams(blocks);
+        }
+        main().catch((e) => {
+            document.getElementById("container").innerHTML =
+                '<div class="error">Load error: ' + e.message + "</div>";
+            console.error(e);
+        });
+    </script>
+</body>
+
+</html>

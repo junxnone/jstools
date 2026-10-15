@@ -25,6 +25,15 @@ https://junxnone.github.io/jstools/mdmarkmap/?md=your_markdown_url
 
 
 
+## Mermaid Viewer
+
+```
+https://junxnone.github.io/jstools/mermaid/?md=your_markdown_url
+```
+
+- [demo](https://junxnone.github.io/jstools/mermaid/?md=https://junxnone.github.io/jstools/mermaid/test)
+
+
 ## Timeline
 
 - [demo for default file](https://junxnone.github.io/jstools/timeline)
