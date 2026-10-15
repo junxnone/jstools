@@ -14,13 +14,6 @@
             background-color: #fafafa;
         }
 
-        #divMain {
-            padding: 6px 10px;
-            background: #fff;
-            border-bottom: 1px solid #ddd;
-            font-size: 13px;
-        }
-
         #container {
             padding: 10px;
         }
@@ -42,14 +35,46 @@
         }
 
         .diagram-svg-wrap {
+            position: relative;
             width: 100%;
             height: 70vh;
+        }
+
+        .diagram-svg-wrap:fullscreen {
+            height: 100vh;
+            background: #fff;
         }
 
         .diagram-svg-wrap svg {
             width: 100%;
             height: 100%;
             display: block;
+        }
+
+        .diagram-controls {
+            position: absolute;
+            right: 8px;
+            bottom: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            z-index: 5;
+        }
+
+        .diagram-controls button {
+            width: 28px;
+            height: 28px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background: #fff;
+            color: #333;
+            font-size: 14px;
+            line-height: 1;
+            cursor: pointer;
+        }
+
+        .diagram-controls button:hover {
+            background: #f0f0f0;
         }
 
         .error {
@@ -63,7 +88,6 @@
 </head>
 
 <body>
-    <div id="divMain"></div>
     <div id="container">Loading...</div>
 
     <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
@@ -71,17 +95,54 @@
     <script>
         mermaid.initialize({ startOnLoad: false, securityLevel: "loose" });
 
-        function AppendLink(url) {
-            const div = document.getElementById("divMain");
-            const texth1 = document.createElement("H3");
-            const linkTmp = document.createElement("a");
-            let index = url.lastIndexOf("/");
-            let newUrl = url.substring(0, index) + "/#/" + url.substring(index + 1, url.length);
-            linkTmp.href = newUrl;
-            console.log("add link:" + newUrl);
-            linkTmp.innerText = "Wiki Page";
-            texth1.appendChild(linkTmp);
-            div.appendChild(texth1);
+        function toggleFullscreen(wrap) {
+            if (document.fullscreenElement === wrap) {
+                document.exitFullscreen();
+            } else {
+                wrap.requestFullscreen();
+            }
+        }
+
+        function addControls(wrap, panZoom) {
+            const controls = document.createElement("div");
+            controls.className = "diagram-controls";
+
+            const zoomIn = document.createElement("button");
+            zoomIn.title = "Zoom in";
+            zoomIn.innerText = "+";
+            zoomIn.onclick = () => panZoom.zoomIn();
+
+            const zoomOut = document.createElement("button");
+            zoomOut.title = "Zoom out";
+            zoomOut.innerText = "−";
+            zoomOut.onclick = () => panZoom.zoomOut();
+
+            const reset = document.createElement("button");
+            reset.title = "Reset";
+            reset.innerText = "⟲";
+            reset.onclick = () => {
+                panZoom.resetZoom();
+                panZoom.resetPan();
+            };
+
+            const fullscreen = document.createElement("button");
+            fullscreen.title = "Fullscreen";
+            fullscreen.innerText = "⛶";
+            fullscreen.onclick = () => toggleFullscreen(wrap);
+
+            controls.appendChild(zoomIn);
+            controls.appendChild(zoomOut);
+            controls.appendChild(reset);
+            controls.appendChild(fullscreen);
+            wrap.appendChild(controls);
+
+            wrap.addEventListener("fullscreenchange", () => {
+                setTimeout(() => {
+                    panZoom.resize();
+                    panZoom.fit();
+                    panZoom.center();
+                }, 0);
+            });
         }
 
         function extractMermaidBlocks(md) {
@@ -122,14 +183,15 @@
                     const svgEl = wrap.querySelector("svg");
                     svgEl.removeAttribute("height");
                     svgEl.style.maxWidth = "none";
-                    svgPanZoom(svgEl, {
+                    const panZoom = svgPanZoom(svgEl, {
                         zoomEnabled: true,
-                        controlIconsEnabled: true,
+                        controlIconsEnabled: false,
                         fit: true,
                         center: true,
                         minZoom: 0.2,
                         maxZoom: 20
                     });
+                    addControls(wrap, panZoom);
                 } catch (e) {
                     const err = document.createElement("div");
                     err.className = "error";
@@ -153,7 +215,6 @@
                     md = md + ".md";
                 }
                 console.log("render markdown:" + md);
-                AppendLink(md);
                 const reqUrl = new URL(md, document.location);
                 const req = new Request(reqUrl);
                 //need Help: support fetch resources from different site
