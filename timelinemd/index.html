@@ -28,6 +28,20 @@
             min-width: 10px;
         }
 
+        /* vis-timeline clips each item's label to its own (possibly very
+           narrow) box by default; let the label spill past the box edges
+           instead of truncating it - a short label overlapping its
+           neighbor slightly is far more readable than one cut down to a
+           couple of characters */
+        .vis-item.vis-range .vis-item-overflow,
+        .vis-item.vis-background .vis-item-overflow {
+            overflow: visible;
+        }
+
+        .vis-item.vis-range .vis-item-content {
+            max-width: none;
+        }
+
         #detail {
             border-top: 1px solid #ddd;
             margin-top: 10px;
