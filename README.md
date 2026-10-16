@@ -38,3 +38,12 @@ https://junxnone.github.io/jstools/mermaid/?md=your_markdown_url
 
 - [demo for default file](https://junxnone.github.io/jstools/timeline)
 - [demo for url file](https://junxnone.github.io/jstools/timeline?json=https://raw.githubusercontent.com/junxnone/tl/main/data/chinamars.json)
+
+
+## Timeline Markdown
+
+```
+https://junxnone.github.io/jstools/timelinemd/?md=your_markdown_url
+```
+
+- [demo](https://junxnone.github.io/jstools/timelinemd/?md=https://junxnone.github.io/jstools/timelinemd/test)

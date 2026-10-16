@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Timeline Markdown</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+        body,
+        html {
+            font-family: arial, sans-serif;
+            font-size: 11pt;
+        }
+
+        .vis-item.expected {
+            background-color: transparent;
+            border-style: dashed !important;
+            z-index: 0;
+        }
+
+        #detail {
+            border-top: 1px solid #ddd;
+            margin-top: 10px;
+            padding: 10px;
+            background: #fafafa;
+        }
+
+        #detail .detail-title {
+            font-weight: bold;
+            color: #555;
+            margin-bottom: 6px;
+        }
+
+        #detail:empty {
+            display: none;
+        }
+
+        .error {
+            color: #c00;
+            padding: 10px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 11pt;
+        }
+    </style>
+
+    <script src="./assets/vis-timeline-graph2d.min.js"></script>
+    <link href="./assets/vis-timeline-graph2d.min.css" rel="stylesheet" type="text/css" />
+    <script src="https://unpkg.com/showdown/dist/showdown.min.js"></script>
+</head>
+
+<body>
+    <p>
+        <input type="button" id="prev" value=" < ">
+        <input type="button" id="first" value=" First ">
+        <input type="button" id="next" value=" > "><br>
+    </p>
+    <div id="visualization"></div>
+    <div id="detail"></div>
+    <div id="loading">loading...</div>
+
+    <script type="text/javascript">
+        var moment = vis.moment;
+        var converter = new showdown.Converter();
+        var VALID_TYPES = ['point', 'range', 'box', 'background'];
+        var DATE_FORMATS = ["YYYY-MM-DD HH:mm", "YYYY-MM-DD", "YYYY-MM", "YYYY", moment.ISO_8601];
+
+        function customOrder(a, b) {
+            // order by id
+            return a.id - b.id;
+        }
+
+        function makeDefaultOptions() {
+            return {
+                order: customOrder,
+                width: '100%',
+                height: '900px',
+                orientation: {
+                    axis: "both",
+                    item: "top"
+                },
+                showTooltips: true,
+                tooltip: {
+                    followMouse: true,
+                    overflowMethod: 'none',
+                    delay: 100,
+                },
+                margin: {
+                    axis: 200,
+                    item: 200
+                }
+            };
+        }
+
+        function showErrors(msgs) {
+            const div = document.createElement("div");
+            div.className = "error";
+            div.innerText = msgs.join("\n");
+            document.body.insertBefore(div, document.getElementById("visualization"));
+        }
+
+        function splitLines(text) {
+            return text.replace(/^﻿/, "").split(/\r\n|\n/);
+        }
+
+        function parseFlexibleDate(str) {
+            if (!str) return null;
+            const trimmed = str.trim();
+            if (trimmed.toLowerCase() === "now") return moment();
+            const m = moment(trimmed, DATE_FORMATS, true);
+            return m.isValid() ? m : null;
+        }
+
+        function coerceValue(raw, path) {
+            if (path.length === 1 && (path[0] === "start" || path[0] === "end")) {
+                const d = parseFlexibleDate(raw);
+                return d ? d.toDate() : raw;
+            }
+            if (raw === "true") return true;
+            if (raw === "false") return false;
+            if (/^-?\d+(\.\d+)?$/.test(raw)) return Number(raw);
+            return raw;
+        }
+
+        function setPath(obj, path, value) {
+            let cur = obj;
+            for (let i = 0; i < path.length - 1; i++) {
+                const key = path[i];
+                if (typeof cur[key] !== "object" || cur[key] === null) cur[key] = {};
+                cur = cur[key];
+            }
+            cur[path[path.length - 1]] = value;
+        }
+
+        //parse the optional YAML-ish "---" frontmatter block
+        function parseFrontmatter(lines) {
+            let i = 0;
+            while (i < lines.length && lines[i].trim() === "") i++;
+            if (lines[i] !== "---") {
+                return { frontmatter: {}, title: null, bodyLines: lines };
+            }
+            i++;
+            const fmLines = [];
+            while (i < lines.length && lines[i].trim() !== "---") {
+                fmLines.push(lines[i]);
+                i++;
+            }
+            i++; //skip closing ---
+            const frontmatter = {};
+            let title = null;
+            fmLines.forEach((line) => {
+                const m = line.match(/^([^:]+):\s*(.*)$/);
+                if (!m) return;
+                const key = m[1].trim();
+                const value = m[2].trim();
+                if (key === "title") {
+                    title = value;
+                    return;
+                }
+                if (key.indexOf("timeline.") === 0) {
+                    const path = key.slice("timeline.".length).split(".");
+                    frontmatter[key] = { path, raw: value };
+                }
+            });
+            return { frontmatter, title, bodyLines: lines.slice(i) };
+        }
+
+        function applyFrontmatter(options, frontmatter) {
+            Object.values(frontmatter).forEach(({ path, raw }) => {
+                setPath(options, path, coerceValue(raw, path));
+            });
+        }
+
+        //## <start>[ ~ <end>]  <name>  {attrs}
+        function parseHeading(raw, currentGroup) {
+            let text = raw.trim();
+            let attrType = null;
+            const classNames = [];
+            const attrMatch = text.match(/\s*\{([^{}]*)\}\s*$/);
+            if (attrMatch) {
+                text = text.slice(0, attrMatch.index).trim();
+                attrMatch[1].split(/[\s,]+/).filter(Boolean).forEach((tok) => {
+                    if (VALID_TYPES.indexOf(tok) !== -1) attrType = tok;
+                    else classNames.push(tok);
+                });
+            }
+            const m = text.match(/^(\S+)(?:\s*~\s*(\S+))?(?:\s+(.*))?$/);
+            const startStr = m ? m[1] : text;
+            const endStr = m && m[2] ? m[2] : null;
+            const name = m && m[3] ? m[3].trim() : "";
+            return {
+                headingRaw: raw,
+                startStr,
+                endStr,
+                name,
+                attrType,
+                classNames,
+                group: currentGroup,
+                bodyLines: []
+            };
+        }
+
+        function parseBody(lines, errors) {
+            let currentGroup = null;
+            const groupOrder = [];
+            const items = [];
+            let current = null;
+            let inFence = false;
+
+            function flush() {
+                if (!current) return;
+                const ev = current;
+                current = null;
+
+                const startM = parseFlexibleDate(ev.startStr);
+                if (!startM) {
+                    errors.push('事件 "' + ev.headingRaw + '" 的开始日期无法解析: ' + ev.startStr);
+                    return;
+                }
+                let endM = null;
+                if (ev.endStr) {
+                    endM = parseFlexibleDate(ev.endStr);
+                    if (!endM) {
+                        errors.push('事件 "' + ev.headingRaw + '" 的结束日期无法解析: ' + ev.endStr);
+                        return;
+                    }
+                    if (endM.isBefore(startM)) {
+                        errors.push('事件 "' + ev.headingRaw + '" 的结束日期早于开始日期');
+                        return;
+                    }
+                }
+
+                let type = ev.attrType || (endM ? "range" : "point");
+                if (VALID_TYPES.indexOf(type) === -1) {
+                    errors.push('事件 "' + ev.headingRaw + '" 的类型无效: ' + type);
+                    return;
+                }
+                if (type === "background" && !endM) {
+                    errors.push('事件 "' + ev.headingRaw + '" 是 background 类型但没有结束日期（vis-timeline 要求 background 必须有 end）');
+                    return;
+                }
+
+                const bodyMd = ev.bodyLines.join("\n").trim();
+                const item = {
+                    id: items.length,
+                    rawGroup: ev.group,
+                    start: startM.toDate(),
+                    content: ev.name || ev.startStr,
+                    title: endM
+                        ? startM.format("YYYY-MM-DD") + " ~ " + endM.format("YYYY-MM-DD")
+                        : startM.format("YYYY-MM-DD"),
+                    type: type,
+                    bodyHtml: bodyMd ? converter.makeHtml(bodyMd) : ""
+                };
+                if (endM) item.end = endM.toDate();
+                if (ev.classNames.length) item.className = ev.classNames.join(" ");
+                items.push(item);
+            }
+
+            lines.forEach((line) => {
+                const fenceMatch = line.match(/^\s*(```|~~~)/);
+                if (fenceMatch) {
+                    inFence = !inFence;
+                    if (current) current.bodyLines.push(line);
+                    return;
+                }
+                if (!inFence) {
+                    const h1 = line.match(/^#(?!#)\s+(.+)$/);
+                    const h2 = !h1 && line.match(/^##(?!#)\s+(.+)$/);
+                    if (h1) {
+                        flush();
+                        currentGroup = h1[1].trim();
+                        if (groupOrder.indexOf(currentGroup) === -1) groupOrder.push(currentGroup);
+                        return;
+                    }
+                    if (h2) {
+                        flush();
+                        current = parseHeading(h2[1], currentGroup);
+                        return;
+                    }
+                }
+                if (current) current.bodyLines.push(line);
+            });
+            flush();
+
+            //resolve items left without a group: background items legitimately
+            //shade the full chart height; everything else needs a visible home
+            const UNGROUPED_LABEL = "(未分组)";
+            let usedFallback = false;
+            if (groupOrder.length) {
+                items.forEach((it) => {
+                    if (it.rawGroup) {
+                        it.group = it.rawGroup;
+                    } else if (it.type !== "background") {
+                        it.group = UNGROUPED_LABEL;
+                        usedFallback = true;
+                    }
+                });
+                if (usedFallback && groupOrder.indexOf(UNGROUPED_LABEL) === -1) {
+                    groupOrder.push(UNGROUPED_LABEL);
+                    errors.push('存在出现在任何 "# 分组" 标题之前的事件，已归入 "' + UNGROUPED_LABEL + '" 分组');
+                }
+            }
+            items.forEach((it) => delete it.rawGroup);
+
+            return { items, groupOrder };
+        }
+
+        function buildGroupsDataSet(groupOrder) {
+            if (!groupOrder.length) return null;
+            return new vis.DataSet(groupOrder.map((name) => ({ id: name, content: name })));
+        }
+
+        async function loadMarkdown() {
+            const url = new URL(document.location);
+            if (url.searchParams.has("str")) {
+                return url.searchParams.get("str");
+            }
+            let md = url.searchParams.get("md");
+            if (!md) {
+                md = "test.md";
+            } else if (!md.endsWith(".md")) {
+                md = md + ".md";
+            }
+            const reqUrl = new URL(md, document.location);
+            const res = await fetch(new Request(reqUrl));
+            return await res.text();
+        }
+
+        async function main() {
+            const text = await loadMarkdown();
+            const errors = [];
+            const lines = splitLines(text);
+            const { frontmatter, title, bodyLines } = parseFrontmatter(lines);
+            if (title) document.title = title;
+
+            const options = makeDefaultOptions();
+            applyFrontmatter(options, frontmatter);
+
+            const { items, groupOrder } = parseBody(bodyLines, errors);
+
+            document.getElementById("loading").style.display = "none";
+
+            if (errors.length) showErrors(errors);
+            if (!items.length) {
+                if (!errors.length) showErrors(["未解析到任何事件（需要形如 \"## 日期  名称\" 的二级标题）"]);
+                return;
+            }
+
+            const itemsById = {};
+            items.forEach((it) => { itemsById[it.id] = it; });
+
+            const visItems = new vis.DataSet(items);
+            const groups = buildGroupsDataSet(groupOrder);
+            const container = document.getElementById("visualization");
+            const timeline = groups
+                ? new vis.Timeline(container, visItems, groups, options)
+                : new vis.Timeline(container, visItems, options);
+
+            //frontmatter can pin an explicit window via timeline.start/timeline.end;
+            //otherwise fit the view to whatever range the data actually covers
+            const hasExplicitWindow = Object.keys(frontmatter).some((k) => {
+                const path = frontmatter[k].path;
+                return path.length === 1 && (path[0] === "start" || path[0] === "end");
+            });
+            if (!hasExplicitWindow) timeline.fit({ animation: false });
+
+            const detail = document.getElementById("detail");
+            function showDetail(id) {
+                const it = itemsById[id];
+                if (!it) { detail.innerHTML = ""; return; }
+                detail.innerHTML = '<div class="detail-title">' + it.title + "</div>" + (it.bodyHtml || "<em>(no description)</em>");
+            }
+            timeline.on("select", function (props) {
+                if (props.items && props.items.length) showDetail(props.items[0]);
+            });
+
+            const navIds = items.slice().sort((a, b) => a.start - b.start).map((it) => it.id);
+            let navPos = 0;
+            function focusIndex(pos) {
+                navPos = Math.max(0, Math.min(navIds.length - 1, pos));
+                const id = navIds[navPos];
+                timeline.setSelection([id]);
+                timeline.focus([id], { animation: { duration: 200, easingFunction: "easeInOutQuint" }, zoom: false });
+                showDetail(id);
+            }
+            document.getElementById("next").onclick = () => focusIndex(navPos + 1);
+            document.getElementById("prev").onclick = () => focusIndex(navPos - 1);
+            document.getElementById("first").onclick = () => focusIndex(0);
+        }
+        main().catch((e) => {
+            document.getElementById("loading").style.display = "none";
+            showErrors(["Load error: " + e.message]);
+            console.error(e);
+        });
+    </script>
+</body>
+
+</html>
