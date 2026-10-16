@@ -18,6 +18,16 @@
             z-index: 0;
         }
 
+        /* a short range/background duration can collapse to a sub-pixel
+           sliver at a zoomed-out view; force it to stay legible */
+        .vis-item.vis-range {
+            min-width: 30px;
+        }
+
+        .vis-item.vis-background {
+            min-width: 10px;
+        }
+
         #detail {
             border-top: 1px solid #ddd;
             margin-top: 10px;
@@ -29,10 +39,6 @@
             font-weight: bold;
             color: #555;
             margin-bottom: 6px;
-        }
-
-        #detail:empty {
-            display: none;
         }
 
         .error {
@@ -64,6 +70,10 @@
         var converter = new showdown.Converter();
         var VALID_TYPES = ['point', 'range', 'box', 'background'];
         var DATE_FORMATS = ["YYYY-MM-DD HH:mm", "YYYY-MM-DD", "YYYY-MM", "YYYY", moment.ISO_8601];
+        //a bare \S+ token can't hold "YYYY-MM-DD HH:mm" (it has a space in it),
+        //so start/end need their own token grammar instead of "whatever isn't whitespace"
+        var DATE_TOKEN = "now|\\d{4}(?:-\\d{2}(?:-\\d{2}(?:[ T]\\d{2}:\\d{2}(?::\\d{2})?)?)?)?";
+        var HEADING_RE = new RegExp("^(" + DATE_TOKEN + ")(?:\\s*~\\s*(" + DATE_TOKEN + "))?(?:\\s+(.*))?$", "i");
 
         function customOrder(a, b) {
             // order by id
@@ -74,7 +84,8 @@
             return {
                 order: customOrder,
                 width: '100%',
-                height: '900px',
+                //no fixed height: let vis-timeline size itself to exactly fit
+                //the stacked items so there's no internal scrollbar
                 orientation: {
                     axis: "both",
                     item: "top"
@@ -86,10 +97,17 @@
                     delay: 100,
                 },
                 margin: {
-                    axis: 200,
-                    item: 200
+                    axis: 20,
+                    item: 10
                 }
             };
+        }
+
+        function hasFrontmatterPath(frontmatter, name) {
+            return Object.keys(frontmatter).some((k) => {
+                const path = frontmatter[k].path;
+                return path.length === 1 && path[0] === name;
+            });
         }
 
         function showErrors(msgs) {
@@ -111,8 +129,10 @@
             return m.isValid() ? m : null;
         }
 
+        var DATE_OPTION_KEYS = ["start", "end", "min", "max"];
+
         function coerceValue(raw, path) {
-            if (path.length === 1 && (path[0] === "start" || path[0] === "end")) {
+            if (path.length === 1 && DATE_OPTION_KEYS.indexOf(path[0]) !== -1) {
                 const d = parseFlexibleDate(raw);
                 return d ? d.toDate() : raw;
             }
@@ -184,7 +204,7 @@
                     else classNames.push(tok);
                 });
             }
-            const m = text.match(/^(\S+)(?:\s*~\s*(\S+))?(?:\s+(.*))?$/);
+            const m = text.match(HEADING_RE);
             const startStr = m ? m[1] : text;
             const endStr = m && m[2] ? m[2] : null;
             const name = m && m[3] ? m[3].trim() : "";
@@ -350,6 +370,20 @@
             const itemsById = {};
             items.forEach((it) => { itemsById[it.id] = it; });
 
+            //default the visible window AND the pan/zoom limits to the data's
+            //own [earliest start, latest end] - no padding, and no scrolling
+            //past the actual timeline - unless frontmatter overrides them
+            let boundsMin = new Date(Math.min.apply(null, items.map((it) => it.start.getTime())));
+            let boundsMax = new Date(Math.max.apply(null, items.map((it) => (it.end || it.start).getTime())));
+            if (boundsMin.getTime() === boundsMax.getTime()) {
+                boundsMin = moment(boundsMin).subtract(1, "day").toDate();
+                boundsMax = moment(boundsMax).add(1, "day").toDate();
+            }
+            if (!hasFrontmatterPath(frontmatter, "start")) options.start = boundsMin;
+            if (!hasFrontmatterPath(frontmatter, "end")) options.end = boundsMax;
+            if (!hasFrontmatterPath(frontmatter, "min")) options.min = boundsMin;
+            if (!hasFrontmatterPath(frontmatter, "max")) options.max = boundsMax;
+
             const visItems = new vis.DataSet(items);
             const groups = buildGroupsDataSet(groupOrder);
             const container = document.getElementById("visualization");
@@ -357,19 +391,11 @@
                 ? new vis.Timeline(container, visItems, groups, options)
                 : new vis.Timeline(container, visItems, options);
 
-            //frontmatter can pin an explicit window via timeline.start/timeline.end;
-            //otherwise fit the view to whatever range the data actually covers
-            const hasExplicitWindow = Object.keys(frontmatter).some((k) => {
-                const path = frontmatter[k].path;
-                return path.length === 1 && (path[0] === "start" || path[0] === "end");
-            });
-            if (!hasExplicitWindow) timeline.fit({ animation: false });
-
             const detail = document.getElementById("detail");
             function showDetail(id) {
                 const it = itemsById[id];
                 if (!it) { detail.innerHTML = ""; return; }
-                detail.innerHTML = '<div class="detail-title">' + it.title + "</div>" + (it.bodyHtml || "<em>(no description)</em>");
+                detail.innerHTML = '<div class="detail-title">' + it.title + "</div>" + (it.bodyHtml || "<em>（无正文）</em>");
             }
             timeline.on("select", function (props) {
                 if (props.items && props.items.length) showDetail(props.items[0]);
@@ -387,6 +413,10 @@
             document.getElementById("next").onclick = () => focusIndex(navPos + 1);
             document.getElementById("prev").onclick = () => focusIndex(navPos - 1);
             document.getElementById("first").onclick = () => focusIndex(0);
+
+            //show the earliest event's body right away instead of leaving the
+            //panel blank until the user happens to click something
+            showDetail(navIds[0]);
         }
         main().catch((e) => {
             document.getElementById("loading").style.display = "none";

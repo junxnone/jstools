@@ -1,11 +1,12 @@
 ---
 title: 中国火星探测
-timeline.height: 900px
 ---
 
 # 中国
 
 ## 2020-07-23 ~ now  天问一号  {background}
+
+中国首次自主火星探测任务，一步实现"绕、着、巡"三大目标。
 
 ## 2020-07-23  海南文昌发射天问一号
 
@@ -24,7 +25,7 @@ timeline.height: 900px
 
 # 美国
 
-## 2020-07-30  Perseverance launch
+## 2020-07-30 11:50 ~ 2020-07-30 12:30  Perseverance launch window  {range}
 
 Perseverance rover launched atop an Atlas V rocket from Cape Canaveral.
 
