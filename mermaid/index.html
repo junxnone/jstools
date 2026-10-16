@@ -10,42 +10,60 @@
         body {
             margin: 0;
             height: 100%;
+            overflow: hidden;
             font-family: -apple-system, Segoe UI, Arial, sans-serif;
             background-color: #fafafa;
         }
 
-        #container {
-            padding: 10px;
+        #tabbar {
+            display: flex;
+            height: 36px;
+            background: #f5f5f5;
+            border-bottom: 1px solid #ddd;
+            overflow-x: auto;
         }
 
-        .diagram-block {
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            margin-bottom: 16px;
-            background: #fff;
-            overflow: hidden;
-        }
-
-        .diagram-title {
-            padding: 6px 10px;
+        .tab-button {
+            flex: none;
+            padding: 0 14px;
             font-size: 13px;
             color: #555;
-            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            border: none;
+            border-right: 1px solid #ddd;
             background: #f5f5f5;
         }
 
-        .diagram-svg-wrap {
+        .tab-button:hover {
+            background: #eee;
+        }
+
+        .tab-button.active {
+            background: #fff;
+            color: #111;
+            font-weight: bold;
+        }
+
+        #panels {
             position: relative;
             width: 100%;
-            height: 70vh;
+            height: calc(100% - 36px);
         }
 
-        .diagram-svg-wrap:fullscreen {
-            height: 100vh;
+        .diagram-wrap {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
             background: #fff;
+            display: none;
         }
 
-        .diagram-svg-wrap svg {
+        .diagram-wrap.active {
+            display: block;
+        }
+
+        .diagram-wrap svg {
             width: 100%;
             height: 100%;
             display: block;
@@ -85,15 +103,18 @@
             font-size: 12px;
         }
     </style>
-</head>
-
-<body>
-    <div id="container">Loading...</div>
 
     <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom/dist/svg-pan-zoom.min.js"></script>
+</head>
+
+<body>
+    <div id="tabbar"></div>
+    <div id="panels">Loading...</div>
+
     <script>
         mermaid.initialize({ startOnLoad: false, securityLevel: "loose" });
+        const tabs = [];
 
         function toggleFullscreen(wrap) {
             if (document.fullscreenElement === wrap) {
@@ -155,50 +176,77 @@
             return blocks;
         }
 
-        async function renderDiagrams(blocks) {
-            const container = document.getElementById("container");
-            container.innerHTML = "";
-            if (blocks.length === 0) {
-                container.innerHTML = "<p>No ```mermaid``` code block found in the markdown.</p>";
+        async function activateTab(index) {
+            tabs.forEach((tab, i) => {
+                tab.btn.classList.toggle("active", i === index);
+                tab.wrap.classList.toggle("active", i === index);
+            });
+            const tab = tabs[index];
+            if (tab.panZoom) {
+                //the wrap may have been hidden (display:none) since this was last
+                //sized, or the window may have resized while it was hidden
+                setTimeout(() => {
+                    tab.panZoom.resize();
+                    tab.panZoom.fit();
+                    tab.panZoom.center();
+                }, 0);
                 return;
             }
-            for (let i = 0; i < blocks.length; i++) {
-                const block = document.createElement("div");
-                block.className = "diagram-block";
+            try {
+                const { svg } = await mermaid.render("mmd-" + index, tab.block);
+                tab.wrap.innerHTML = svg;
+                const svgEl = tab.wrap.querySelector("svg");
+                svgEl.removeAttribute("height");
+                svgEl.style.maxWidth = "none";
+                tab.panZoom = svgPanZoom(svgEl, {
+                    zoomEnabled: true,
+                    controlIconsEnabled: false,
+                    fit: true,
+                    center: true,
+                    minZoom: 0.2,
+                    maxZoom: 20
+                });
+                addControls(tab.wrap, tab.panZoom);
+                //the wrap just became visible (display:none -> block) in this same
+                //tick, so the layout it needs to fit against may not exist yet when
+                //svgPanZoom's own initial fit runs; fit again once it settles
+                setTimeout(() => {
+                    tab.panZoom.resize();
+                    tab.panZoom.fit();
+                    tab.panZoom.center();
+                }, 0);
+            } catch (e) {
+                const err = document.createElement("div");
+                err.className = "error";
+                err.innerText = "Render error: " + e.message;
+                tab.wrap.appendChild(err);
+            }
+        }
 
-                const title = document.createElement("div");
-                title.className = "diagram-title";
-                title.innerText = "Diagram " + (i + 1) + " (scroll to zoom, drag to pan)";
-                block.appendChild(title);
+        function renderDiagrams(blocks) {
+            const tabbar = document.getElementById("tabbar");
+            const panels = document.getElementById("panels");
+            tabbar.innerHTML = "";
+            panels.innerHTML = "";
+            if (blocks.length === 0) {
+                panels.innerHTML = "<p style=\"padding:10px\">No ```mermaid``` code block found in the markdown.</p>";
+                return;
+            }
+            blocks.forEach((block, i) => {
+                const btn = document.createElement("button");
+                btn.className = "tab-button";
+                btn.innerText = "Diagram " + (i + 1);
+                btn.title = "scroll to zoom, drag to pan";
+                btn.onclick = () => activateTab(i);
+                tabbar.appendChild(btn);
 
                 const wrap = document.createElement("div");
-                wrap.className = "diagram-svg-wrap";
-                block.appendChild(wrap);
+                wrap.className = "diagram-wrap";
+                panels.appendChild(wrap);
 
-                container.appendChild(block);
-
-                try {
-                    const { svg } = await mermaid.render("mmd-" + i, blocks[i]);
-                    wrap.innerHTML = svg;
-                    const svgEl = wrap.querySelector("svg");
-                    svgEl.removeAttribute("height");
-                    svgEl.style.maxWidth = "none";
-                    const panZoom = svgPanZoom(svgEl, {
-                        zoomEnabled: true,
-                        controlIconsEnabled: false,
-                        fit: true,
-                        center: true,
-                        minZoom: 0.2,
-                        maxZoom: 20
-                    });
-                    addControls(wrap, panZoom);
-                } catch (e) {
-                    const err = document.createElement("div");
-                    err.className = "error";
-                    err.innerText = "Render error: " + e.message;
-                    wrap.appendChild(err);
-                }
-            }
+                tabs.push({ block, btn, wrap, panZoom: null });
+            });
+            activateTab(0);
         }
 
         //process searchparams and get string
@@ -222,10 +270,10 @@
                 text = await res.text();
             }
             const blocks = extractMermaidBlocks(text);
-            await renderDiagrams(blocks);
+            renderDiagrams(blocks);
         }
         main().catch((e) => {
-            document.getElementById("container").innerHTML =
+            document.getElementById("panels").innerHTML =
                 '<div class="error">Load error: ' + e.message + "</div>";
             console.error(e);
         });
