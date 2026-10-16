@@ -10,38 +10,62 @@
         html,
         body {
             margin: 0;
+            height: 100%;
+            overflow: hidden;
             font-family: -apple-system, Segoe UI, Arial, sans-serif;
             background-color: #fafafa;
         }
 
-        #container {
-            padding: 10px;
+        #tabbar {
+            display: flex;
+            height: 36px;
+            background: #f5f5f5;
+            border-bottom: 1px solid #ddd;
+            overflow-x: auto;
         }
 
-        .markmap-panel {
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            margin-bottom: 16px;
-            overflow: hidden;
-        }
-
-        .markmap-title {
-            padding: 6px 10px;
+        .tab-button {
+            flex: none;
+            padding: 0 14px;
             font-size: 13px;
             color: #555;
-            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            border: none;
+            border-right: 1px solid #ddd;
             background: #f5f5f5;
         }
 
-        .markmap-wrap {
+        .tab-button:hover {
+            background: #eee;
+        }
+
+        .tab-button.active {
+            background: #fff;
+            color: #111;
+            font-weight: bold;
+        }
+
+        #panels {
             position: relative;
             width: 100%;
-            height: 70vh;
+            height: calc(100% - 36px);
+        }
+
+        .markmap-wrap {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
             background-color: RGB(227, 237, 205);
+            display: none;
+        }
+
+        .markmap-wrap.active {
+            display: block;
         }
 
         .markmap-wrap:fullscreen {
-            height: 100vh;
+            background-color: RGB(227, 237, 205);
         }
 
         .markmap-wrap svg {
@@ -90,10 +114,12 @@
 </head>
 
 <body>
-    <div id="container">Loading...</div>
+    <div id="tabbar"></div>
+    <div id="panels">Loading...</div>
 
     <script>
         const transformer = new markmap.Transformer();
+        const tabs = [];
 
         function extractMarkmapBlocks(md) {
             const re = /```markmap\s*\n([\s\S]*?)```/g;
@@ -145,42 +171,58 @@
             });
         }
 
+        function activateTab(index) {
+            tabs.forEach((tab, i) => {
+                tab.btn.classList.toggle("active", i === index);
+                tab.wrap.classList.toggle("active", i === index);
+            });
+            const tab = tabs[index];
+            if (tab.mm) {
+                tab.mm.fit();
+                return;
+            }
+            try {
+                const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+                tab.wrap.appendChild(svg);
+                const { root, frontmatter } = transformer.transform(tab.block);
+                const options = markmap.deriveOptions(frontmatter && frontmatter.markmap);
+                tab.mm = markmap.Markmap.create(svg, options, root);
+                addControls(tab.wrap, tab.mm);
+                //the wrap just became visible (display:none -> block) in this same
+                //tick, so the layout it needs to fit against may not exist yet when
+                //create()'s own internal fit() runs; fit again once it settles
+                setTimeout(() => tab.mm.fit(), 0);
+            } catch (e) {
+                const err = document.createElement("div");
+                err.className = "error";
+                err.innerText = "Render error: " + e.message;
+                tab.wrap.appendChild(err);
+            }
+        }
+
         function renderBlocks(blocks) {
-            const container = document.getElementById("container");
-            container.innerHTML = "";
+            const tabbar = document.getElementById("tabbar");
+            const panels = document.getElementById("panels");
+            tabbar.innerHTML = "";
+            panels.innerHTML = "";
             if (blocks.length === 0) {
-                container.innerHTML = "<p>No ```markmap``` code block found in the markdown.</p>";
+                panels.innerHTML = "<p style=\"padding:10px\">No ```markmap``` code block found in the markdown.</p>";
                 return;
             }
             blocks.forEach((block, i) => {
-                const panel = document.createElement("div");
-                panel.className = "markmap-panel";
-
-                const title = document.createElement("div");
-                title.className = "markmap-title";
-                title.innerText = blockTitle(block, i);
-                panel.appendChild(title);
+                const btn = document.createElement("button");
+                btn.className = "tab-button";
+                btn.innerText = blockTitle(block, i);
+                btn.onclick = () => activateTab(i);
+                tabbar.appendChild(btn);
 
                 const wrap = document.createElement("div");
                 wrap.className = "markmap-wrap";
-                panel.appendChild(wrap);
+                panels.appendChild(wrap);
 
-                container.appendChild(panel);
-
-                try {
-                    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-                    wrap.appendChild(svg);
-                    const { root, frontmatter } = transformer.transform(block);
-                    const options = markmap.deriveOptions(frontmatter && frontmatter.markmap);
-                    const mm = markmap.Markmap.create(svg, options, root);
-                    addControls(wrap, mm);
-                } catch (e) {
-                    const err = document.createElement("div");
-                    err.className = "error";
-                    err.innerText = "Render error: " + e.message;
-                    wrap.appendChild(err);
-                }
+                tabs.push({ block, btn, wrap, mm: null });
             });
+            activateTab(0);
         }
 
         async function loadMarkdown() {
@@ -205,7 +247,7 @@
             renderBlocks(blocks);
         }
         main().catch((e) => {
-            document.getElementById("container").innerHTML =
+            document.getElementById("panels").innerHTML =
                 '<div class="error">Load error: ' + e.message + "</div>";
             console.error(e);
         });
