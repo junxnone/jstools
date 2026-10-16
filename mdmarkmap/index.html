@@ -33,9 +33,13 @@
         //render markmap in the div
         const renderMap = function (str, prefix) {
             const dst = document.getElementById("MarkMap");
-            dst.innerHTML = str;
+            //markmap-autoloader reads back el.textContent as the markdown source;
+            //assigning via innerHTML would make the browser HTML-parse the raw
+            //markdown first, silently mangling any "<"/">" in it (e.g. C/C++ code
+            //blocks with "i<n" comparisons) before autoloader ever sees the text
+            dst.textContent = str;
             if (prefix) {
-                dst.innerHTML = str.replace(/\]\(\s*(?![a-zA-Z][a-zA-Z0-9+.-]*:|\/\/|#)/g, "](" + prefix);
+                dst.textContent = str.replace(/\]\(\s*(?![a-zA-Z][a-zA-Z0-9+.-]*:|\/\/|#)/g, "](" + prefix);
             }
             markmap.autoLoader.renderAll();
         };
