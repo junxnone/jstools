@@ -25,6 +25,15 @@ https://junxnone.github.io/jstools/mdmarkmap/?md=your_markdown_url
 
 
 
+## Markdown Markmap Blocks
+
+```
+https://junxnone.github.io/jstools/mdmark-markmap/?md=your_markdown_url
+```
+
+- [demo](https://junxnone.github.io/jstools/mdmark-markmap/?md=https://junxnone.github.io/jstools/mdmark-markmap/test)
+
+
 ## Mermaid Viewer
 
 ```

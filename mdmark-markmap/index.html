@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Markmap Blocks Viewer</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link href="https://markmap.js.org/favicon.png" rel="icon" type="image/png" />
+    <style>
+        html,
+        body {
+            margin: 0;
+            font-family: -apple-system, Segoe UI, Arial, sans-serif;
+            background-color: #fafafa;
+        }
+
+        #container {
+            padding: 10px;
+        }
+
+        .markmap-panel {
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            margin-bottom: 16px;
+            overflow: hidden;
+        }
+
+        .markmap-title {
+            padding: 6px 10px;
+            font-size: 13px;
+            color: #555;
+            border-bottom: 1px solid #eee;
+            background: #f5f5f5;
+        }
+
+        .markmap {
+            width: 100%;
+            height: 70vh;
+            display: block;
+            background-color: RGB(227, 237, 205);
+        }
+
+        .error {
+            color: #c00;
+            padding: 10px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+    <script>
+        window.markmap = { autoLoader: { manual: true } };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/markmap-autoloader"></script>
+</head>
+
+<body>
+    <div id="container">Loading...</div>
+
+    <script>
+        function extractMarkmapBlocks(md) {
+            const re = /```markmap\s*\n([\s\S]*?)```/g;
+            const blocks = [];
+            let m;
+            while ((m = re.exec(md)) !== null) {
+                blocks.push(m[1].trim());
+            }
+            return blocks;
+        }
+
+        function blockTitle(block, index) {
+            const fm = block.match(/^---\s*\n([\s\S]*?)\n---/);
+            if (fm) {
+                const t = fm[1].match(/^title:\s*(.+)$/m);
+                if (t) return t[1].trim();
+            }
+            return "Markmap " + (index + 1);
+        }
+
+        function renderBlocks(blocks) {
+            const container = document.getElementById("container");
+            container.innerHTML = "";
+            if (blocks.length === 0) {
+                container.innerHTML = "<p>No ```markmap``` code block found in the markdown.</p>";
+                return;
+            }
+            blocks.forEach((block, i) => {
+                const panel = document.createElement("div");
+                panel.className = "markmap-panel";
+
+                const title = document.createElement("div");
+                title.className = "markmap-title";
+                title.innerText = blockTitle(block, i);
+                panel.appendChild(title);
+
+                const wrap = document.createElement("div");
+                wrap.className = "markmap";
+                wrap.id = "markmap-" + i;
+                //markmap-autoloader reads back el.textContent as the markdown
+                //source - never assign via innerHTML here (see mdmarkmap's fix:
+                //the browser would HTML-parse the raw markdown first and mangle
+                //any "<"/">" in it before autoloader ever sees the text)
+                wrap.textContent = block;
+                panel.appendChild(wrap);
+
+                container.appendChild(panel);
+            });
+        }
+
+        async function loadMarkdown() {
+            const url = new URL(document.location);
+            if (url.searchParams.has("str")) {
+                return url.searchParams.get("str");
+            }
+            let md = url.searchParams.get("md");
+            if (!md) {
+                md = "test.md";
+            } else if (!md.endsWith(".md")) {
+                md = md + ".md";
+            }
+            const reqUrl = new URL(md, document.location);
+            const res = await fetch(new Request(reqUrl));
+            return await res.text();
+        }
+
+        async function main() {
+            const text = await loadMarkdown();
+            const blocks = extractMarkmapBlocks(text);
+            renderBlocks(blocks);
+            if (blocks.length) await markmap.autoLoader.renderAll();
+        }
+        main().catch((e) => {
+            document.getElementById("container").innerHTML =
+                '<div class="error">Load error: ' + e.message + "</div>";
+            console.error(e);
+        });
+    </script>
+</body>
+
+</html>
