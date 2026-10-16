@@ -33,7 +33,7 @@
             const dst = document.getElementById("MarkMap");
             dst.innerHTML = str;
             if (prefix) {
-                dst.innerHTML = str.replace(/\]\(/g, "](" + prefix);
+                dst.innerHTML = str.replace(/\]\(\s*(?![a-zA-Z][a-zA-Z0-9+.-]*:|\/\/|#)/g, "](" + prefix);
             }
             markmap.autoLoader.renderAll();
         };
