@@ -90,6 +90,12 @@
     //setInterval(myTimer, 100);
     //function myTimer() {doubleclick = false}
 
+    // group = depth in the tree (0 = root); closer to root => larger text
+    const levelTextHeights = [35, 20, 15, 10, 5];
+    function textHeightByLevel(level) {
+      return levelTextHeights[Math.min(level || 0, levelTextHeights.length - 1)];
+    }
+
     var Graph = ForceGraph3D({
     })
       (document.getElementById('3d-graph'))
@@ -102,7 +108,7 @@
         const sprite = new SpriteText(node.title);
         sprite.material.depthWrite = false; // make sprite background transparent
         sprite.color = node.color;
-        sprite.textHeight = 8;
+        sprite.textHeight = textHeightByLevel(node.group);
         return sprite;
       })
       //.onNodeClick(node => window.open(node.url))
