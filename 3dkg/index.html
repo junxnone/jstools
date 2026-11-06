@@ -96,6 +96,25 @@
       return levelTextHeights[Math.min(level || 0, levelTextHeights.length - 1)];
     }
 
+    // Each branch (subtree under a root child) gets its own hue;
+    // lightness decreases with level, so deeper nodes are darker.
+    function assignBranchColors(nodes, nodesById) {
+      const idOf = end => (typeof end === 'object' ? end.id : end);
+      const root = nodes.find(n => n.group === 0) || nodes[0];
+      root.textColor = '#ffffff';
+      const branches = root.childLinks.map(l => nodesById[idOf(l.target)]);
+      branches.forEach((branch, i) => {
+        const hue = Math.round((i * 360) / branches.length);
+        const stack = [branch];
+        while (stack.length) {
+          const n = stack.pop();
+          const lightness = Math.max(85 - (n.group - 1) * 10, 30);
+          n.textColor = `hsl(${hue}, 80%, ${lightness}%)`;
+          n.childLinks.forEach(l => stack.push(nodesById[idOf(l.target)]));
+        }
+      });
+    }
+
     var Graph = ForceGraph3D({
     })
       (document.getElementById('3d-graph'))
@@ -107,7 +126,7 @@
       .nodeThreeObject(node => {
         const sprite = new SpriteText(node.title);
         sprite.material.depthWrite = false; // make sprite background transparent
-        sprite.color = node.color;
+        sprite.color = node.textColor || node.color;
         sprite.textHeight = textHeightByLevel(node.group);
         return sprite;
       })
@@ -229,7 +248,9 @@
         b.links.push(link);
         sData.nodes[link.source.index].childLinks.push(link);
       });
+      assignBranchColors(sData.nodes, nodesById);
       Graph.graphData(sData);
+      Graph.nodeThreeObject(Graph.nodeThreeObject()); // rebuild sprites with the new colors
     }, 500);
     var searchi = 0
     var prev_key = ''
