@@ -160,10 +160,31 @@
                     b.links.push(link);
                     gData.nodes[link.source].childLinks.push(link);
                 });
+                assignBranchColors(gData.nodes, nodesById);
                 Graph.graphData(gData);
+                Graph.nodeThreeObject(Graph.nodeThreeObject()); // rebuild sprites with the new colors
             }, 500);
         }
         main().catch((e) => console.error(e));
+
+        // Each branch (subtree under a root child) gets its own hue;
+        // lightness decreases with level, so deeper nodes are darker.
+        function assignBranchColors(nodes, nodesById) {
+            const idOf = end => (typeof end === 'object' ? end.id : end);
+            const root = nodes.find(n => n.group === 0) || nodes[0];
+            root.textColor = '#ffffff';
+            const branches = root.childLinks.map(l => nodesById[idOf(l.target)]);
+            branches.forEach((branch, i) => {
+                const hue = Math.round((i * 360) / branches.length);
+                const stack = [branch];
+                while (stack.length) {
+                    const n = stack.pop();
+                    const lightness = Math.max(85 - (n.group - 1) * 10, 30);
+                    n.textColor = `hsl(${hue}, 80%, ${lightness}%)`;
+                    n.childLinks.forEach(l => stack.push(nodesById[idOf(l.target)]));
+                }
+            });
+        }
 
         let highlightNodes = new Set();
         let highlightLinks = new Set();
@@ -192,7 +213,7 @@
             .nodeThreeObject(node => {
                 const sprite = new SpriteText(node.title);
                 sprite.material.depthWrite = false; // make sprite background transparent
-                sprite.color = node.color;
+                sprite.color = node.textColor || node.color;
                 sprite.textHeight = textHeightByLevel(node.group);
                 return sprite;
             })
