@@ -163,6 +163,7 @@
                 assignBranchColors(gData.nodes, nodesById);
                 Graph.graphData(gData);
                 Graph.nodeThreeObject(Graph.nodeThreeObject()); // rebuild sprites with the new colors
+                applyDensityLayout();
             }, 500);
         }
         main().catch((e) => console.error(e));
@@ -184,6 +185,16 @@
                     n.childLinks.forEach(l => stack.push(nodesById[idOf(l.target)]));
                 }
             });
+        }
+
+        // Siblings spread over a sphere around their parent, so the radius needed
+        // grows with sqrt(child count): the more children, the longer the links
+        // and the stronger the repulsion.
+        function applyDensityLayout() {
+            const kids = n => (n && n.childLinks ? n.childLinks.length : 0);
+            Graph.d3Force('link').distance(link => Math.max(120, 50 * Math.sqrt(kids(link.source))));
+            Graph.d3Force('charge').strength(node => -100 - 50 * Math.sqrt(kids(node)));
+            Graph.d3ReheatSimulation();
         }
 
         let highlightNodes = new Set();
