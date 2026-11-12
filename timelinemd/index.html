@@ -254,6 +254,10 @@
             const items = [];
             let current = null;
             let inFence = false;
+            //a trailing "## Reference" section (link list) is not a group; once we
+            //reach it, everything after is ignored
+            let inReference = false;
+            const REFERENCE_RE = /^(references?|参考(资料|文献)?)$/i;
 
             function flush() {
                 if (!current) return;
@@ -306,6 +310,7 @@
             }
 
             lines.forEach((line) => {
+                if (inReference) return;
                 const fenceMatch = line.match(/^\s*(```|~~~)/);
                 if (fenceMatch) {
                     inFence = !inFence;
@@ -325,6 +330,10 @@
                     }
                     if (h2) {
                         flush();
+                        if (REFERENCE_RE.test(h2[1].trim())) {
+                            inReference = true;
+                            return;
+                        }
                         currentGroup = h2[1].trim();
                         if (groupOrder.indexOf(currentGroup) === -1) groupOrder.push(currentGroup);
                         return;
