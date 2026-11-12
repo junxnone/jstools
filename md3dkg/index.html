@@ -72,7 +72,7 @@
                 kgfile = kgjson;
             }
             const reqUrl = kgfile
-                ? new URL(kgfile)
+                ? new URL(kgfile, document.location)
                 : new URL("README.md", document.location);
             const req = new Request(reqUrl);
             const res = await fetch(req);
@@ -95,21 +95,41 @@
             nodecprevid.push(0)
             var nodeurl = ''
             var nodetitle = ''
+            // "## " .. "###### " headings are levels 1..5; list items nest under the
+            // most recent heading (the list level is added on top of the heading level)
+            var headingBase = 0
+            var lastId = 0
             for (var line = 1; line < lines.length - 1; line++) {
-                if (lines[line].match(/ /g) != null) {
-                    if(lines[line].match(/  /g) != null) {
-                        nodecnow = lines[line].match(/  /g).length + 1
+                var hm = lines[line].match(/^(#{2,6})\s+(.*)$/)
+                if (hm || lines[line].match(/ /g) != null) {
+                    if (hm) {
+                        headingBase = hm[1].length - 1
+                        nodecnow = headingBase
+                        var htext = hm[2].trim()
+                        if (htext.endsWith(')')) {
+                            nodeurl = htext.split(/\[|\]|\(|\)/)[3]
+                            nodetitle = htext.split(/\[|\]|\(|\)/)[1]
+                        } else {
+                            nodetitle = htext
+                            nodeurl = "https://www.baidu.com/s?wd=" + nodetitle;
+                        }
                     } else {
-                        nodecnow = 1
+                        if(lines[line].match(/  /g) != null) {
+                            nodecnow = headingBase + lines[line].match(/  /g).length + 1
+                        } else {
+                            nodecnow = headingBase + 1
+                        }
+                        if(lines[line].endsWith(')')){
+                            nodeurl = lines[line].split(/\[|\]|\(|\)/)[3]
+                            nodetitle = lines[line].split(/\[|\]|\(|\)/)[1]
+                        } else {
+                            nodetitle = lines[line].split('- ').slice(-1)[0]
+                            nodeurl = "https://www.baidu.com/s?wd=" + nodetitle;
+                        }
                     }
-                    if(lines[line].endsWith(')')){
-                        nodeurl = lines[line].split(/\[|\]|\(|\)/)[3]
-                        nodetitle = lines[line].split(/\[|\]|\(|\)/)[1]
-                    } else {
-                        nodetitle = lines[line].split('- ').slice(-1)[0]
-                        nodeurl = "https://www.baidu.com/s?wd=" + nodetitle;
-                    }
-                     
+                    // a node can be at most one level below the previous one
+                    nodecnow = Math.min(nodecnow, nodecprev + 1)
+
                     mdnodes.push({ 'id': line, 'title': nodetitle, 'group': nodecnow, 'url': nodeurl, 'visible': true, 'expand': true, 'childLinks': [], neighbors: [], 'links': [] })
 
                     if(nodecnow == 0) {
@@ -130,11 +150,13 @@
                             mdlinks.push({ 'source': nodecprevid.slice(-1)[0], 'target': line, "visible": true, "expand": true, "value": nodecnow})
                         }
                         if(nodecnow > nodecprev){
-                            mdlinks.push({ 'source': line-1, 'target': line , "visible": true, "expand": true, "value": nodecnow})
-                            nodecprevid.push(line-1)
+                            // the parent is the previous node, not the previous line (there may be blank lines)
+                            mdlinks.push({ 'source': lastId, 'target': line , "visible": true, "expand": true, "value": nodecnow})
+                            nodecprevid.push(lastId)
                         }
                     }
                     nodecprev = nodecnow;
+                    lastId = line;
 
                     //mdlinks.push({'source':line-1, 'target':line})
                 }

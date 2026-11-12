@@ -10,9 +10,14 @@ https://junxnone.github.io/jstools/3dkg/?json=your_kgjson_url
 - [demo for local file](https://junxnone.github.io/jstools/3dkg/?json=linux/linux_kg.json)
 - [demo for url file](https://junxnone.github.io/jstools/3dkg/?json=https://raw.githubusercontent.com/junxnone/junxnone.github.io/main/kg.json)
 
-### 3D Knowledge Graph for markdown
+## Markdown 3D Knowledge Graph
 
-- https://junxnone.github.io/tmdkg/
+```
+https://junxnone.github.io/jstools/md3dkg/?md=your_markdown_url
+```
+
+- 用 `##`~`######` 标题和缩进列表描述层级，格式说明见 [md3dkg/README.md](md3dkg/README.md)
+- [demo](https://junxnone.github.io/jstools/md3dkg/?md=https://junxnone.github.io/jstools/md3dkg/test.md)
 
 
 ## Markdown MindMap
