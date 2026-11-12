@@ -78,7 +78,13 @@
             const res = await fetch(req);
             text = await res.text();
             lines = text.split(/\r\n|\n/);
-            roottitle = lines[0].split("# ")[1]
+            // the first "# " heading (anywhere in the file) is the root node; everything
+            // before it is ignored and parsing starts right after it
+            var rootLine = -1
+            for (var i0 = 0; i0 < lines.length; i0++) {
+                if (/^#\s+\S/.test(lines[i0])) { rootLine = i0; break }
+            }
+            roottitle = rootLine >= 0 ? lines[rootLine].replace(/^#\s+/, "").trim() : null
             if(roottitle == null){
                 roottitle = "root"
             }
@@ -99,7 +105,8 @@
             // most recent heading (the list level is added on top of the heading level)
             var headingBase = 0
             var lastId = 0
-            for (var line = 1; line < lines.length - 1; line++) {
+            for (var line = rootLine + 1; line < lines.length; line++) {
+                if (/^#\s+\S/.test(lines[line])) continue // only the first "# " is the root
                 var hm = lines[line].match(/^(#{2,6})\s+(.*)$/)
                 if (hm || lines[line].match(/ /g) != null) {
                     if (hm) {
@@ -130,13 +137,13 @@
                     // a node can be at most one level below the previous one
                     nodecnow = Math.min(nodecnow, nodecprev + 1)
 
-                    mdnodes.push({ 'id': line, 'title': nodetitle, 'group': nodecnow, 'url': nodeurl, 'visible': true, 'expand': true, 'childLinks': [], neighbors: [], 'links': [] })
+                    mdnodes.push({ 'id': line + 1, 'title': nodetitle, 'group': nodecnow, 'url': nodeurl, 'visible': true, 'expand': true, 'childLinks': [], neighbors: [], 'links': [] })
 
                     if(nodecnow == 0) {
-                        mdlinks.push({ 'source': 0, 'target': line, 'target': line, "visible": true, "expand": true, "value": nodecnow  })
+                        mdlinks.push({ 'source': 0, 'target': line + 1, "visible": true, "expand": true, "value": nodecnow  })
                     } else {
                         if(nodecnow == nodecprev){
-                            mdlinks.push({ 'source': nodecprevid.slice(-1)[0], 'target': line, "visible": true, "expand": true, "value": nodecnow })
+                            mdlinks.push({ 'source': nodecprevid.slice(-1)[0], 'target': line + 1, "visible": true, "expand": true, "value": nodecnow })
                         }
                         if(nodecnow < nodecprev){
                             
@@ -147,16 +154,16 @@
                                 }
                             }
                             //console.log(nodecprevid.slice(-1)[0])
-                            mdlinks.push({ 'source': nodecprevid.slice(-1)[0], 'target': line, "visible": true, "expand": true, "value": nodecnow})
+                            mdlinks.push({ 'source': nodecprevid.slice(-1)[0], 'target': line + 1, "visible": true, "expand": true, "value": nodecnow})
                         }
                         if(nodecnow > nodecprev){
                             // the parent is the previous node, not the previous line (there may be blank lines)
-                            mdlinks.push({ 'source': lastId, 'target': line , "visible": true, "expand": true, "value": nodecnow})
+                            mdlinks.push({ 'source': lastId, 'target': line + 1, "visible": true, "expand": true, "value": nodecnow})
                             nodecprevid.push(lastId)
                         }
                     }
                     nodecprev = nodecnow;
-                    lastId = line;
+                    lastId = line + 1;
 
                     //mdlinks.push({'source':line-1, 'target':line})
                 }
