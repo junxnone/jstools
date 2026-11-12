@@ -42,6 +42,15 @@
             max-width: none;
         }
 
+        #doc-title {
+            font-size: 18pt;
+            margin: 10px 0;
+        }
+
+        #doc-title:empty {
+            display: none;
+        }
+
         #detail {
             border-top: 1px solid #ddd;
             margin-top: 10px;
@@ -70,6 +79,7 @@
 </head>
 
 <body>
+    <h1 id="doc-title"></h1>
     <p>
         <input type="button" id="prev" value=" < ">
         <input type="button" id="first" value=" First ">
@@ -205,7 +215,7 @@
             });
         }
 
-        //## <start>[ ~ <end>]  <name>  {attrs}
+        //### <start>[ ~ <end>]  <name>  {attrs}
         function parseHeading(raw, currentGroup) {
             let text = raw.trim();
             let attrType = null;
@@ -234,8 +244,12 @@
             };
         }
 
+        //# title  ->  document title (first one only)
+        //## name  ->  group (a labelled row)
+        //### <start>[ ~ <end>]  <name>  {attrs}  ->  event
         function parseBody(lines, errors) {
             let currentGroup = null;
+            let docTitle = null;
             const groupOrder = [];
             const items = [];
             let current = null;
@@ -299,17 +313,25 @@
                     return;
                 }
                 if (!inFence) {
-                    const h1 = line.match(/^#(?!#)\s+(.+)$/);
-                    const h2 = !h1 && line.match(/^##(?!#)\s+(.+)$/);
+                    //only the first "# " line is the title; any later one is
+                    //just ordinary text belonging to the current event body
+                    const h1 = docTitle === null && line.match(/^#(?!#)\s+(.+)$/);
+                    const h2 = line.match(/^##(?!#)\s+(.+)$/);
+                    const h3 = line.match(/^###(?!#)\s+(.+)$/);
                     if (h1) {
                         flush();
-                        currentGroup = h1[1].trim();
-                        if (groupOrder.indexOf(currentGroup) === -1) groupOrder.push(currentGroup);
+                        docTitle = h1[1].trim();
                         return;
                     }
                     if (h2) {
                         flush();
-                        current = parseHeading(h2[1], currentGroup);
+                        currentGroup = h2[1].trim();
+                        if (groupOrder.indexOf(currentGroup) === -1) groupOrder.push(currentGroup);
+                        return;
+                    }
+                    if (h3) {
+                        flush();
+                        current = parseHeading(h3[1], currentGroup);
                         return;
                     }
                 }
@@ -332,12 +354,12 @@
                 });
                 if (usedFallback && groupOrder.indexOf(UNGROUPED_LABEL) === -1) {
                     groupOrder.push(UNGROUPED_LABEL);
-                    errors.push('存在出现在任何 "# 分组" 标题之前的事件，已归入 "' + UNGROUPED_LABEL + '" 分组');
+                    errors.push('存在出现在任何 "## 分组" 标题之前的事件，已归入 "' + UNGROUPED_LABEL + '" 分组');
                 }
             }
             items.forEach((it) => delete it.rawGroup);
 
-            return { items, groupOrder };
+            return { items, groupOrder, docTitle };
         }
 
         function buildGroupsDataSet(groupOrder) {
@@ -366,18 +388,23 @@
             const errors = [];
             const lines = splitLines(text);
             const { frontmatter, title, bodyLines } = parseFrontmatter(lines);
-            if (title) document.title = title;
 
             const options = makeDefaultOptions();
             applyFrontmatter(options, frontmatter);
 
-            const { items, groupOrder } = parseBody(bodyLines, errors);
+            const { items, groupOrder, docTitle } = parseBody(bodyLines, errors);
+
+            //the "# title" heading is the article title; a frontmatter
+            //"title:" (if present) overrides it for the page <title> only
+            const pageTitle = title || docTitle;
+            if (pageTitle) document.title = pageTitle;
+            if (docTitle) document.getElementById("doc-title").textContent = docTitle;
 
             document.getElementById("loading").style.display = "none";
 
             if (errors.length) showErrors(errors);
             if (!items.length) {
-                if (!errors.length) showErrors(["未解析到任何事件（需要形如 \"## 日期  名称\" 的二级标题）"]);
+                if (!errors.length) showErrors(["未解析到任何事件（需要形如 \"### 日期  名称\" 的三级标题）"]);
                 return;
             }
 

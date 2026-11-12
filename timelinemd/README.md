@@ -20,6 +20,19 @@ https://junxnone.github.io/jstools/timelinemd/?md=your_markdown_url
 
 ## Markdown 格式
 
+标题层级一览：`#` 文章标题、`##` 分组、`###` 事件。
+
+> 迁移提示：旧版格式（`#` 为分组、`##` 为事件、标题写在 frontmatter）不再支持。旧文件改成新格式只需把 `##` 改为 `###`、`#` 改为 `##`，再在文件开头加一个 `# 标题`。
+
+### 标题
+
+文件里第一个一级标题（`# `）是**文章标题**：它会显示在页面顶部，同时作为页面的
+`<title>`。只有第一个一级标题算标题，之后再出现的 `# ` 行会被当作普通正文。
+
+```markdown
+# 中国火星探测
+```
+
 ### Frontmatter（可选）
 
 文件开头用 `---` 包裹的一段，里面是扁平的 `key: value` 行（不是真正的
@@ -27,7 +40,6 @@ YAML——不支持列表，引号规则也很简单，就是"冒号后面的内
 
 ```markdown
 ---
-title: 中国火星探测
 timeline.orientation.axis: both
 timeline.zoomable: true
 timeline.start: 2020-01-01
@@ -35,7 +47,7 @@ timeline.min: 2020-01-01
 ---
 ```
 
-- `title` 用来设置页面的 `<title>`。除 `timeline.*` 外的其他 key 会被忽略。
+- `title` 是可选的，仅用于覆盖页面的 `<title>`（正常情况下直接用上面的一级标题即可，不需要写）。除 `title` 和 `timeline.*` 外的其他 key 会被忽略。
 - `timeline.a.b.c: value` 会写入底层 vis-timeline 的
   [配置对象](https://visjs.github.io/vis-timeline/docs/timeline/#Configuration_Options)
   的 `a.b.c` 路径——没有 key 白名单，所以 vis-timeline 的任何配置项都能这样
@@ -58,38 +70,38 @@ timeline.min: 2020-01-01
 
 ### 分组
 
-一级标题（`#`）开启一个新分组——直接对应 vis-timeline 的
+二级标题（`##`）开启一个新分组——直接对应 vis-timeline 的
 [group](https://visjs.github.io/vis-timeline/docs/timeline/#groups)（带标签
 的一行）。分组按第一次出现的顺序排列。
 
 ```markdown
-# 中国
+## 中国
 
 ...事件...
 
-# 美国
+## 美国
 
 ...事件...
 ```
 
-如果文件里完全没有 `#` 标题，所有事件会渲染在同一个无标签的行里（不分组）。
+如果文件里完全没有 `##` 标题，所有事件会渲染在同一个无标签的行里（不分组）。
 
 ### 事件
 
-二级标题（`##`）表示一个事件：
+三级标题（`###`）表示一个事件：
 
 ```
-## <开始日期>[ ~ <结束日期>]  <名称>  {属性}
+### <开始日期>[ ~ <结束日期>]  <名称>  {属性}
 ```
 
 ```markdown
-## 2020-07-23 ~ now  天问一号  {background}
+### 2020-07-23 ~ now  天问一号  {background}
 
-## 2021-02-10 ~ 2021-02-15  近火捕获至平面机动  {range}
+### 2021-02-10 ~ 2021-02-15  近火捕获至平面机动  {range}
 
-## 2020-07-30 11:50 ~ 2020-07-30 12:30  Perseverance launch window  {range}
+### 2020-07-30 11:50 ~ 2020-07-30 12:30  Perseverance launch window  {range}
 
-## 2020-08-02  第一次轨道修正
+### 2020-08-02  第一次轨道修正
 ```
 
 - **`<开始日期>` / `<结束日期>`** — 支持 `YYYY`、`YYYY-MM`、`YYYY-MM-DD`、
@@ -112,7 +124,7 @@ timeline.min: 2020-01-01
     background 条目会直接报错，所以本工具会提前拦截并给出可读的错误提示，
     而不是让页面崩掉。
 
-一个**没有** `#` 分组包裹的 `{background}` 事件是有意设计的功能，不是
+一个**没有** `##` 分组包裹的 `{background}` 事件是有意设计的功能，不是
 bug：vis-timeline 会把不属于任何分组的 background 条目归到内置的
 `__background__` 分组，让它贯穿所有分组、覆盖整个图表高度——适合用来标出
 一段整体的时代/阶段。而不属于任何分组、且不是 background 类型的事件，会被
@@ -121,11 +133,11 @@ bug：vis-timeline 会把不属于任何分组的 background 条目归到内置�
 
 ### 正文
 
-每个 `##` 标题到下一个 `#`/`##` 标题之间的内容，就是该事件的正文，会按
+每个 `###` 标题到下一个 `##`/`###` 标题之间的内容，就是该事件的正文，会按
 Markdown 渲染（通过 [showdown](https://github.com/showdownjs/showdown)）：
 
 ```markdown
-## 2020-07-23  海南文昌发射天问一号
+### 2020-07-23  海南文昌发射天问一号
 
 在海南文昌航天发射场由长征五号遥四运载火箭发射。
 
@@ -140,7 +152,7 @@ Markdown 渲染（通过 [showdown](https://github.com/showdownjs/showdown)）�
 显示 `（无正文）`。
 
 正文里的围栏代码块（```` ``` ```` 或 `~~~`）会被正确处理——代码块内部看起来
-像 `##` 的行，会被当作代码内容，不会被误判成新事件的开始。
+像 `##`/`###` 的行，会被当作代码内容，不会被误判成新事件的开始。
 
 ### 导航
 
@@ -161,7 +173,7 @@ Markdown 渲染（通过 [showdown](https://github.com/showdownjs/showdown)）�
 
 ## 示例
 
-完整示例见 [`test.md`](test.md)（两个分组、一个背景带、普通的单点事件、
+完整示例见 [`test.md`](test.md)（文章标题、两个分组、一个背景带、普通的单点事件、
 一个跨多天的时间段、一个带具体时刻的时间段，以及一个 `{expected}` 样式的
 事件）。
 
@@ -174,7 +186,7 @@ Markdown 渲染（通过 [showdown](https://github.com/showdownjs/showdown)）�
 - `<结束日期>` 早于 `<开始日期>`
 - 出现未知的 `{type}` 取值
 - `{background}` 没有 `<结束日期>`
-- 事件标题前面没有任何 `#` 分组（会归入 `(未分组)`，并给出提示——不会被
+- 事件标题前面没有任何 `##` 分组（会归入 `(未分组)`，并给出提示——不会被
   悄悄丢弃）
 
 如果**一个事件都没能解析出来**，会显示提示信息，而不是一个空页面。
