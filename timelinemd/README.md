@@ -67,6 +67,8 @@ timeline.min: 2020-01-01
 
 另外也没有固定的默认 `height`——时间轴会根据内容自动调整高度，所以不会有
 内部滚动条。如果想要固定高度并允许内部滚动，设置 `timeline.height` 即可。
+默认最大高度为 600px（内容少时仍自适应，超过后出现内部垂直滚动条）。用
+`timeline.maxHeight` 覆盖，例如 `timeline.maxHeight: 900` 或 `timeline.maxHeight: 900px`。
 
 ### 分组
 

@@ -109,7 +109,9 @@
                 order: customOrder,
                 width: '100%',
                 //no fixed height: let vis-timeline size itself to exactly fit
-                //the stacked items so there's no internal scrollbar
+                //the stacked items; capped by maxHeight (override via
+                //frontmatter `timeline.maxHeight`) beyond which it scrolls
+                maxHeight: 600,
                 orientation: {
                     axis: "both",
                     item: "top"
