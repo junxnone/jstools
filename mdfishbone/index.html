@@ -29,6 +29,12 @@
   .chip.done { background:var(--done); border-color:var(--done-b); }
   .chip.done:hover { background:#95d5b2; }
   .chip.todo { background:var(--todo); border-color:var(--todo-b); }
+  .chip.plain { background:#e7ecff; border-color:#748ffc; }
+  .chip.plain:hover { background:#d0daff; }
+  .lv a { color:#fff; text-decoration:none; }
+  .lv a:hover { text-decoration:underline; }
+  .gname a { color:#1c2f7a; text-decoration:none; }
+  .gname a:hover { text-decoration:underline; }
   .head { position:absolute; left:6px; top:14px; white-space:nowrap; background:var(--bone); color:#fff; font-weight:bold; padding:10px 16px; border-radius:30px 30px 8px 8px; z-index:2; text-align:center; }
   svg.lines { position:absolute; left:0; top:0; pointer-events:none; z-index:1; }
   .hint { margin-top:10px; color:#888; font-size:12px; }
@@ -53,7 +59,7 @@
   <div style="flex-basis:100%"><span>选择 md：<button type="button" id="pick">选择文件</button><input type="file" id="file" accept=".md,.txt" hidden></span> <span id="msg" class="hint" style="margin:0 0 0 12px"></span></div>
 </div>
 <div class="wrap"><div class="board" id="board"></div></div>
-<div class="hint">所有内容都来自 md 文件：「# 」行是标题，「## 」行是一个层次 (一根骨)，一级无复选框的列表项是主题 (短横线)，带 [x] / [ ] 的列表项是条目。页面本身不含任何内容：用 ?md=文件地址 读取 md (不传时读同目录下的 test.md)，也可以选择或拖入本地 md 文件；?base=链接前缀 (URL 参数) 用来补全 md 里以 / 开头的站内链接。</div>
+<div class="hint">所有内容都来自 md 文件：「# 」行是标题，「## 」行是一个层次 (一根骨)，一级无复选框的列表项是主题 (短横线)，带 [x] / [ ] 的列表项是条目；没有「## 」也没有复选框的纯嵌套列表按缩进深度分层 (树模式)。页面本身不含任何内容：用 ?md=文件地址 读取 md (不传时读同目录下的 test.md)，也可以选择或拖入本地 md 文件；?base=链接前缀 (URL 参数) 用来补全 md 里以 / 开头的站内链接。</div>
 
 <script>
 let DOC_TITLE = "";
@@ -62,7 +68,30 @@ let LEVELS = [];
 let SLANT = 1; // 骨从主脊向右下斜出
 const SLANT_ANGLE = 45; // 斜骨与主干 (竖线) 的夹角 (度)，越大骨越平
 
+let TREE = false; // 树模式: md 里没有 "## " 层次也没有复选框 (如 docsify 的侧边栏)，按缩进深度分配角色
+
+function fixHref(u) { return u.startsWith("/") ? BASE + u : u; }
+function parseNode(text) { const lm = text.match(/^\[(.+?)\]\((.+?)\)$/); return lm ? { text: lm[1], href: fixHref(lm[2]) } : { text: text, href: null }; }
+
+// 树模式: 缩进 0 = 一根骨，缩进 1 = 主题，缩进 ≥ 2 = 条目 (更深的写成「上级 / 本级」)；遇到单独的 --- 行停止
+function parseTree(md) {
+  const levels = []; let cur = null, grp = null; const stack = [];
+  for (const line of md.split(/\r?\n/)) {
+    if (/^---\s*$/.test(line)) break;
+    const m = line.match(/^(\s*)- (.*)$/);
+    if (!m) continue;
+    const depth = Math.floor(m[1].length / 2), n = parseNode(m[2].trim());
+    if (depth === 0) { cur = { title: n.text, href: n.href, groups: [] }; levels.push(cur); grp = null; stack.length = 0; }
+    else if (!cur) continue;
+    else if (depth === 1) { grp = { name: n.text, href: n.href, items: [] }; cur.groups.push(grp); stack.length = 0; }
+    else if (grp) { stack.length = depth - 2; stack[depth - 2] = n.text; grp.items.push({ text: stack.join(" / "), href: n.href, done: null }); }
+  }
+  return levels;
+}
+
 function parse(md) {
+  TREE = !/^## /m.test(md) && !/^\s*- \[[ xX]\]\s/m.test(md);
+  if (TREE) { DOC_TITLE = ""; return parseTree(md); }
   const levels = []; let cur = null, grp = null, parent = null; DOC_TITLE = "";
   for (const line of md.split(/\r?\n/)) {
     if (!DOC_TITLE && /^# /.test(line)) { DOC_TITLE = line.slice(2).trim(); continue; }
@@ -96,20 +125,28 @@ function render() {
     const slot = el("div", "slot");
     const block = el("div", "block");
     const d = lv.groups.reduce((a, g) => a + g.items.filter(x => x.done).length, 0);
-    const t = lv.groups.reduce((a, g) => a + g.items.filter(x => !x.done).length, 0);
+    const t = lv.groups.reduce((a, g) => a + g.items.filter(x => x.done === false).length, 0);
     totalDone += d; totalTodo += t;
-    const badge = el("div", "lv", lv.title);
-    badge.appendChild(el("small", "", "已创建 " + d + " / 未创建 " + t));
+    const badge = el("div", "lv");
+    if (lv.href) { const a = el("a", "", lv.title); a.href = lv.href; a.target = "_blank"; badge.appendChild(a); }
+    else badge.appendChild(document.createTextNode(lv.title));
+    // 树模式没有「已创建 / 未创建」，只显示条目数 (主题下没有条目的主题自己算一项)
+    const cnt = lv.groups.reduce((a, g) => a + (g.items.length || 1), 0);
+    if (!TREE || cnt) badge.appendChild(el("small", "", TREE ? cnt + " 项" : "已创建 " + d + " / 未创建 " + t));
     block.appendChild(badge);
     lv.groups.forEach(g => {
-      const items = g.items.filter(x => true);
-      if (!items.length) return;
-      const gd = el("div", "grp"); gd.appendChild(el("div", "gname", g.name));
+      const items = g.items;
+      if (!items.length && !TREE) return;
+      const gd = el("div", "grp");
+      const gn = el("div", "gname");
+      if (g.href) { const a = el("a", "", g.name); a.href = g.href; a.target = "_blank"; gn.appendChild(a); } else gn.textContent = g.name;
+      gd.appendChild(gn);
       const box = el("div", "items");
       items.forEach(x => {
+        const kind = x.done === null ? "plain" : (x.done ? "done" : "todo");
         let c;
-        if (x.href) { c = el("a", "chip " + (x.done ? "done" : "todo"), x.text); c.href = x.href; c.target = "_blank"; }
-        else c = el("span", "chip " + (x.done ? "done" : "todo"), x.text);
+        if (x.href) { c = el("a", "chip " + kind, x.text); c.href = x.href; c.target = "_blank"; }
+        else c = el("span", "chip " + kind, x.text);
         box.appendChild(c);
       });
       gd.appendChild(box); block.appendChild(gd);
@@ -119,6 +156,8 @@ function render() {
   const head = el("div", "head", DOC_TITLE || "end"); board.appendChild(head);
   document.getElementById("lgdone").textContent = "已创建 " + totalDone;
   document.getElementById("lgtodo").textContent = "未创建 " + totalTodo;
+  document.getElementById("lgdone").parentNode.style.display = TREE ? "none" : "";
+  document.getElementById("lgtodo").parentNode.style.display = TREE ? "none" : "";
   requestAnimationFrame(() => drawLines(board, slots, head));
 }
 
@@ -155,8 +194,10 @@ function drawLines(board, slots, head) {
     attach.push({ x0, y0, ya: Math.min(y0 - 8, Math.max(floor, y0 - (x0 - spineX) / Math.tan(SLANT_ANGLE * Math.PI / 180) * SLANT)) });
   });
   const pills = [];
+  // 树模式没有完成比例: 主脊画成一条统一的线
+  if (TREE) mk("line", { x1: spineX, y1: headBottom, x2: spineX, y2: lastBottom, stroke: BONE, "stroke-width": 6 });
   // 主脊按层次分段，每段按「已创建占比」自上而下先画绿色，剩下画黄色
-  slots.forEach((s, i) => {
+  if (!TREE) slots.forEach((s, i) => {
     const start = i === 0 ? headBottom : attach[i].ya;
     const end = i + 1 < slots.length ? attach[i + 1].ya : lastBottom;
     const total = s.d + s.t, ratio = total ? s.d / total : 0, mid = start + (end - start) * ratio;
@@ -170,7 +211,7 @@ function drawLines(board, slots, head) {
   });
   const lastS = slots[slots.length - 1];
   const lastDone = lastS && lastS.t === 0 && lastS.d > 0;
-  mk("polygon", { points: (spineX - 13) + "," + (lastBottom - 2) + " " + (spineX + 13) + "," + (lastBottom - 2) + " " + spineX + "," + (lastBottom + 20), fill: lastDone ? GREEN : YELLOW });
+  mk("polygon", { points: (spineX - 13) + "," + (lastBottom - 2) + " " + (spineX + 13) + "," + (lastBottom - 2) + " " + spineX + "," + (lastBottom + 20), fill: TREE ? BONE : (lastDone ? GREEN : YELLOW) });
   attach.forEach(a => {
     mk("line", { x1: spineX, y1: a.ya, x2: a.x0, y2: a.y0, stroke: BONE, "stroke-width": 4, "stroke-linecap": "round" });
   });
@@ -184,9 +225,11 @@ function drawLines(board, slots, head) {
 
 function load(md, name) {
   LEVELS = parse(md);
+  // 树模式的 md 通常没有 "# 标题": 用文件名 (去掉路径和 .md) 作标题
+  if (TREE && !DOC_TITLE && name) DOC_TITLE = decodeURIComponent(String(name).split(/[\\/?#]/).filter(Boolean).pop() || "").replace(/\.md$/i, "");
   document.getElementById("title").textContent = DOC_TITLE;
   document.title = DOC_TITLE || "mdfishbone";
-  document.getElementById("msg").textContent = LEVELS.length ? (name || "md") : "没有解析到任何二级标题层次，请检查 md 格式";
+  document.getElementById("msg").textContent = LEVELS.length ? (name || "md") : "没有解析到任何层次，请检查 md 格式 (需要「## 」标题加复选清单，或纯嵌套列表)";
   render();
 }
 function fromUrl(u) {

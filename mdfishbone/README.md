@@ -4,7 +4,7 @@
 每个层次下是主题，主题下是具体条目；已创建的条目带链接、可以点击，未创建的条目用黄色标出，
 并按完成比例把主干染成绿色和黄色，一眼看出每个层次做到了哪里。
 
-页面本身不含任何内容，也不依赖任何外部库，所有内容都来自 Markdown 文件。
+页面本身不含任何内容，也不依赖任何外部库，所有内容都来自 Markdown 文件。除了上面的「复选清单」写法，也支持不带复选框的纯嵌套列表（见「树模式」）。
 
 ## 用法
 
@@ -21,7 +21,7 @@ https://junxnone.github.io/jstools/mdfishbone/?md=your_markdown_url
 - 直接双击打开本地 `index.html`（`file://`）时，浏览器不允许页面读取本地文件，`?md=` 会读取失败，只能用「选择文件」或拖入。需要自动加载时可以起一个本地静态服务器，例如在本目录执行 `python -m http.server`，再访问 `http://localhost:8000/?md=test.md`。
 - 跨域抓取需要对方允许 CORS（`raw.githubusercontent.com`、GitHub Pages 都可以）。
 - 地址里如果带 `#` 或 `&`，需要转义成 `%23`、`%26`，否则会被当成页面自己的参数。
-- 解析不出任何层次时，按钮后面会提示「没有解析到任何二级标题层次」；读取失败时会显示失败原因。
+- 解析不出任何层次时，按钮后面会提示「没有解析到任何层次」；读取失败时会显示失败原因。
 - [demo](https://junxnone.github.io/jstools/mdfishbone/?md=https://junxnone.github.io/jstools/mdfishbone/test.md&base=https://junxnone.github.io/linux/%23)（`test.md` 是一份完整的 Linux RoadMap 清单，约 570 行）
 
 ## Markdown 格式
@@ -64,6 +64,32 @@ https://junxnone.github.io/jstools/mdfishbone/?md=your_markdown_url
 - 同一个主题下的条目没有数量限制，会自动换行。
 - 换行符可以是 `LF` 或 `CRLF`（Windows）。
 - 也可以直接读取文档站同步下来的 md：文件开头的标题信息表（`Title`、`Created @` 等）没有 `## ` 层次，会被忽略。
+
+## 树模式（docsify 侧边栏等纯嵌套列表）
+
+如果 md 里**既没有 `## ` 标题，也没有 `[x]` / `[ ]` 复选框**，页面会自动进入树模式，按缩进深度分配角色，
+可以直接渲染 docsify 的 `_sidebar.md` 这类文件：
+
+```markdown
+- [Linux Tools](/0059_Tools)
+  - [文本编辑](/0078_Tools_Text)
+    - [Vi](/0039_Tools_Text_Vi)
+      - [Vi 常用插件](/0017_Tools_Text_Vi_Plugins)
+    - [awk](/0052_Tools_Text_awk)
+  - 其他工具
+    - [grep](/0025_Tools_Text_grep)
+```
+
+| 缩进（每级 2 个空格） | 角色 | 说明 |
+| --- | --- | --- |
+| 0 级 | 一根骨（层次） | 层次标题上显示该层次的条目数「N 项」；写成 `[文字](url)` 时标题可以点击 |
+| 1 级 | 主题（短横线） | 主题名写成 `[文字](url)` 时可以点击；没有下级的主题只显示名字 |
+| 2 级及更深 | 条目（标签） | 3 级及更深的写成「上级 / 本级」，例如 `Vi / Vi 常用插件`；写成 `[文字](url)` 时可以点击 |
+
+- 没有「已创建 / 未创建」的概念，所以标签是中性的浅蓝色，不显示绿、黄图例、完成比例和进度主干，主干是统一的蓝色。
+- 页面标题用文件名（去掉路径和 `.md`），因为这类文件通常没有 `# ` 标题。
+- 遇到单独的一行 `---` 就停止解析，docsify 侧边栏末尾的分隔线和署名都会被忽略。
+- 以 `/` 开头的链接同样会被 `?base=` 补全，例如 `?md=…/_sidebar.md&base=https://junxnone.github.io/linux/%23`。
 
 ## 显示
 
