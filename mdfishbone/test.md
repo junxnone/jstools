@@ -1,0 +1,573 @@
+# Linux RoadMap
+
+## 1 入门
+
+- 认识系统
+  - [x] [Linux 概览](/0001_Linux)
+  - [x] [Linux 历史](/0113_Linux_History)
+  - [ ] 内核与发行版的关系
+  - [ ] 开源协议 GPL
+  - [ ] 发行版对比
+- 发行版
+  - [x] [Ubuntu](/0120_Ubuntu)
+  - [x] [CentOS](/0107_Desktop_CentOS)
+  - [ ] Debian 系与 RedHat 系的区别
+- 安装与环境
+  - [ ] 虚拟机安装
+  - [ ] WSL
+  - [ ] 双系统
+  - [ ] 启动盘制作
+  - [x] [升级系统](/0089_Ubuntu_Upgrade)
+- 第一次使用
+  - [ ] 终端与 Shell 的区别
+  - [ ] 目录结构 FHS
+  - [ ] 路径与当前目录
+  - [ ] 帮助系统 man help info
+  - [ ] 环境变量与 PATH
+- 文件权限
+  - [ ] 权限位 rwx
+  - [ ] chmod chown umask
+  - [ ] SUID SGID Sticky
+  - [ ] sudo 与 sudoers
+- 用户与组
+  - [x] [用户管理](/0104_Ubuntu_UserAdd)
+  - [x] [adduser](/0069_Tools_OS_adduser)
+  - [x] [忘记密码](/0093_Ubuntu_ForgetPassword)
+  - [ ] 用户组与 id 命令
+- 软件管理
+  - [x] [APT 包管理](/0015_Ubuntu_APT)
+  - [x] [APT 源](/0119_Ubuntu_APT_Source)
+  - [x] [snap](/0021_Tools_OS_snap)
+  - [x] [update-alternatives](/0016_Tools_OS_updatealternatives)
+  - [ ] dpkg
+  - [ ] yum 与 dnf
+  - [ ] 源码编译 configure make
+  - [ ] pip 与虚拟环境
+
+## 2 命令行
+
+- 总览
+  - [x] [Linux Tools 总览](/0059_Tools)
+- Shell
+  - [x] [Shell](/0134_Tools_Shell)
+  - [x] [快捷键](/0135_Tools_Shell_hotkey)
+  - [x] [bashrc](/0102_Linux_bashrc)
+  - [x] [history](/0049_Tools_history)
+  - [ ] 通配符与引号
+  - [ ] 命令替换与变量
+  - [ ] 标准输入输出与重定向
+  - [ ] 管道
+  - [ ] 别名与函数
+  - [ ] 作业控制与后台运行
+- Shell 脚本
+  - [x] [script 记录终端](/0006_Tools_script)
+  - [ ] 脚本基础与 shebang
+  - [ ] 条件判断
+  - [ ] 循环
+  - [ ] 函数
+  - [ ] 参数与 getopts
+  - [ ] 错误处理 set -euo pipefail
+  - [ ] 脚本调试 set -x
+  - [ ] ShellCheck
+- 文件操作
+  - [x] [文件工具总览](/0077_Tools_File)
+  - [x] [ls](/0023_Tools_File_ls)
+  - [x] [find](/0043_Tools_File_find)
+  - [x] [tree](/0035_Tools_File_tree)
+  - [x] [ln](/0033_Tools_File_ln)
+  - [x] [rename](/0050_Tools_File_rename)
+  - [x] [压缩归档](/0020_Tools_File_Archiver)
+  - [x] [7z](/0128_Tools_File_Archiver_7z)
+  - [ ] cp mv rm mkdir
+  - [ ] cat less head tail
+  - [ ] tar
+  - [ ] file stat touch
+  - [ ] locate 与 updatedb
+  - [ ] du df
+- 文本处理
+  - [x] [文本工具总览](/0078_Tools_Text)
+  - [x] [grep](/0025_Tools_Text_grep)
+  - [x] [sed](/0027_Tools_Text_sed)
+  - [x] [awk](/0052_Tools_Text_awk)
+  - [x] [sort](/0031_Tools_Text_sort)
+  - [x] [tr](/0026_Tools_Text_tr)
+  - [x] [xargs](/0022_Tools_xargs)
+  - [x] [json](/0042_Tools_Text_json)
+  - [ ] 正则表达式
+  - [ ] cut paste join
+  - [ ] uniq wc
+  - [ ] tee
+  - [ ] diff 与 patch
+  - [ ] jq
+- 编辑器
+  - [x] [Vi](/0039_Tools_Text_Vi)
+  - [x] [Vi UseCase](/0018_Tools_Text_Vi_UseCase)
+  - [x] [Vi Plugins](/0017_Tools_Text_Vi_Plugins)
+  - [ ] nano
+  - [ ] Vim 配置
+- 文本对比
+  - [x] [文本对比总览](/0054_Tools_TextCompare)
+  - [x] [meld](/0004_Tools_TextCompare_meld)
+- 远程与传输
+  - [x] [远程工具总览](/0075_Tools_Remote)
+  - [x] [ssh](/0011_Tools_Remote_ssh)
+  - [x] [ssh 连接不稳定](/0100_Tools_Remote_ssh_WorkUnStable)
+  - [x] [sshd 问题](/0132_Ubuntu_Issues_sshd)
+  - [ ] ssh 密钥与免密登录
+  - [ ] ssh config 与跳板机
+  - [ ] ssh 端口转发
+  - [x] [scp](/0010_Tools_Remote_scp)
+  - [x] [rsync](/0044_Tools_Remote_rsync)
+  - [x] [tmux](/0051_Tools_Remote_tmux)
+  - [x] [tmux Arch](/0111_Tools_Remote_tmux_Arch)
+  - [x] [tmux 插件](/0112_Tools_Remote_tmux_plugins)
+  - [ ] screen
+  - [x] [Samba](/0046_Tools_Remote_Samba)
+  - [x] [syncthing](/0029_Tools_Remote_syncthing)
+  - [ ] NFS
+  - [ ] sftp
+- 远程桌面
+  - [x] [远程桌面](/0058_Ubuntu_RemoteDesktop)
+  - [x] [VNC](/0105_Linux_VNC)
+  - [x] [vncserver](/0103_Tools_Remote_vncserver)
+  - [x] [thinclientdrives 问题](/0092_Ubuntu_Issues_thinclientdrives)
+- 下载
+  - [x] [下载工具总览](/0014_Ubuntu_Download)
+  - [x] [aria2](/0091_Ubuntu_Download_aria2)
+  - [x] [磁力链接](/0055_Ubuntu_Download_magnetW)
+  - [x] [Google Drive 命令行下载](/0109_Ubuntu_Download_GoogleDriveFilesCMD)
+  - [ ] curl
+  - [ ] wget
+- 多媒体
+  - [x] [多媒体工具总览](/0076_Tools_Media)
+  - [x] [ffmpeg](/0002_Tools_Media_ffmpeg)
+  - [x] [mediainfo](/0053_Tools_Media_mediainfo)
+  - [x] [image2string](/0036_Tools_Media_image2string)
+  - [x] [live555](/0070_Tools_Media_live555)
+- 开发辅助
+  - [x] [ctags](/0003_Tools_ctags)
+  - [x] [ldd](/0124_Tools_ldd)
+  - [ ] gcc 与 make
+  - [ ] gdb
+  - [ ] git
+  - [ ] cmake
+- 小工具
+  - [x] [date](/0024_Tools_date)
+  - [x] [cal](/0007_Tools_cal)
+  - [x] [bc](/0030_Tools_bc)
+  - [x] [shuf](/0028_Tools_shuf)
+
+## 3 系统管理
+
+- 进程与任务
+  - [x] [进程管理总览](/0032_Tools_Process)
+  - [x] [top](/0009_Tools_Process_top)
+  - [x] [kill](/0019_Tools_Process_kill)
+  - [x] [taskset](/0034_Tools_Process_taskset)
+  - [x] [chrt](/0012_Tools_chrt)
+  - [x] [ulimit](/0041_Tools_OS_ulimit)
+  - [ ] ps 与 pstree
+  - [ ] htop
+  - [ ] nice renice
+  - [ ] 信号详解
+  - [ ] 僵尸进程与孤儿进程
+  - [ ] nohup 与 disown
+  - [ ] lsof
+- 定时任务
+  - [x] [任务调度总览](/0040_Tools_TaskSchedule)
+  - [x] [crontab](/0071_Tools_TaskSchedule_crontab)
+  - [x] [at](/0037_Tools_TaskSchedule_at)
+  - [x] [batch](/0038_Tools_TaskSchedule_batch)
+  - [x] [jobs](/0047_Tools_TaskSchedule_jobs)
+  - [ ] systemd timer
+- 服务管理
+  - [ ] systemd 概念
+  - [ ] systemctl
+  - [ ] unit 文件编写
+  - [ ] target 与启动级别
+  - [ ] 开机自启
+  - [ ] journalctl
+  - [ ] 服务依赖与排错
+- 磁盘与文件系统
+  - [x] [File System](/0064_FileSystem)
+  - [x] [格式化与文件系统类型](/0081_FileSystem_Format)
+  - [x] [LVM](/0131_Linux_LVM)
+  - [x] [自动挂载](/0097_Ubuntu_AutoMountDisk)
+  - [x] [增加 Swap](/0083_Ubuntu_IncreaseSwap)
+  - [x] [大于 2TB 的磁盘](/0099_Ubuntu_Issues_DiskLargerThan2TB)
+  - [x] [ncdu](/0137_Tools_OS_Disk_ncdu)
+  - [ ] fdisk parted
+  - [ ] mount 与 fstab
+  - [ ] ext4 xfs btrfs
+  - [ ] RAID 与 mdadm
+  - [ ] SMART 磁盘健康
+  - [ ] LUKS 磁盘加密
+  - [ ] quota 配额
+- 网络配置
+  - [x] [网络工具总览](/0060_Tools_Networks)
+  - [x] [端口](/0133_Tools_OS_Port)
+  - [x] [端口工具](/0056_Tools_Networks_Port)
+  - [x] [nmap](/0062_Tools_nmap)
+  - [ ] ip 命令
+  - [ ] ss
+  - [ ] ping traceroute mtr
+  - [ ] NetworkManager 与 netplan
+  - [ ] DNS 配置与 dig
+  - [ ] hosts 与 resolv.conf
+  - [ ] 防火墙 ufw iptables nftables
+  - [ ] 路由与 NAT
+  - [ ] tcpdump
+  - [ ] Wireshark
+- 代理
+  - [x] [代理总览](/0080_Tools_Networks_Proxy)
+  - [x] [代理对比](/0180_Tools_Networks_Proxy_Comparison)
+  - [x] [V2Ray](/0066_Tools_Networks_Proxy_V2Ray)
+  - [x] [shadowsocks](/0067_Tools_Networks_Proxy_shadowsocks)
+  - [x] [Xray](/0175_Tools_Networks_Proxy_Xray)
+  - [x] [sing-box](/0176_Tools_Networks_Proxy_sing-box)
+  - [x] [Clash](/0177_Tools_Networks_Proxy_Clash)
+  - [x] [Hysteria](/0178_Tools_Networks_Proxy_Hysteria)
+  - [x] [TUIC](/0179_Tools_Networks_Proxy_TUIC)
+  - [x] [proxychains](/0140_Tools_Networks_Proxy_proxychains)
+  - [x] [Privoxy](/0139_Tools_Networks_Proxy_Privoxy)
+  - [x] [Squid](/0141_Tools_Networks_Proxy_Squid)
+  - [x] [dev-sidecar](/0138_Tools_Networks_Proxy_dev-sidecar)
+  - 协议
+    - [x] [协议总览](/0182_Tools_Networks_Proxy_Protocol)
+    - [x] [VMess](/0142_Tools_Networks_Proxy_Protocol_VMess)
+    - [x] [VLESS](/0143_Tools_Networks_Proxy_Protocol_VLESS)
+    - [x] [Shadowsocks](/0144_Tools_Networks_Proxy_Protocol_Shadowsocks)
+    - [x] [Trojan](/0145_Tools_Networks_Proxy_Protocol_Trojan)
+    - [x] [Socks](/0146_Tools_Networks_Proxy_Protocol_Socks)
+    - [x] [HTTP](/0147_Tools_Networks_Proxy_Protocol_HTTP)
+    - [x] [MTProto](/0148_Tools_Networks_Proxy_Protocol_MTProto)
+    - [x] [Freedom](/0149_Tools_Networks_Proxy_Protocol_Freedom)
+    - [x] [Blackhole](/0150_Tools_Networks_Proxy_Protocol_Blackhole)
+    - [x] [DokodemoDoor](/0151_Tools_Networks_Proxy_Protocol_DokodemoDoor)
+    - [x] [WireGuard](/0152_Tools_Networks_Proxy_Protocol_WireGuard)
+    - [x] [Loopback](/0153_Tools_Networks_Proxy_Protocol_Loopback)
+  - 传输
+    - [x] [传输总览](/0181_Tools_Networks_Proxy_Transport)
+    - [x] [TCP](/0154_Tools_Networks_Proxy_Transport_TCP)
+    - [x] [WebSocket](/0155_Tools_Networks_Proxy_Transport_WebSocket)
+    - [x] [HTTP2](/0156_Tools_Networks_Proxy_Transport_HTTP2)
+    - [x] [gRPC](/0157_Tools_Networks_Proxy_Transport_gRPC)
+    - [x] [mKCP](/0158_Tools_Networks_Proxy_Transport_mKCP)
+    - [x] [QUIC](/0159_Tools_Networks_Proxy_Transport_QUIC)
+    - [x] [DomainSocket](/0160_Tools_Networks_Proxy_Transport_DomainSocket)
+  - 安全
+    - [x] [TLS](/0161_Tools_Networks_Proxy_Security_TLS)
+    - [x] [XTLS](/0162_Tools_Networks_Proxy_Security_XTLS)
+    - [x] [Reality](/0163_Tools_Networks_Proxy_Security_Reality)
+  - V2Ray 配置
+    - [x] [Routing](/0164_Tools_Networks_Proxy_V2Ray_Routing)
+    - [x] [DNS](/0165_Tools_Networks_Proxy_V2Ray_DNS)
+    - [x] [Sniffing](/0166_Tools_Networks_Proxy_V2Ray_Sniffing)
+    - [x] [Mux](/0167_Tools_Networks_Proxy_V2Ray_Mux)
+    - [x] [Policy](/0168_Tools_Networks_Proxy_V2Ray_Policy)
+    - [x] [API](/0169_Tools_Networks_Proxy_V2Ray_API)
+    - [x] [Transparent](/0170_Tools_Networks_Proxy_V2Ray_Transparent)
+    - [x] [Systemd](/0171_Tools_Networks_Proxy_V2Ray_Systemd)
+    - [x] [Nginx](/0172_Tools_Networks_Proxy_V2Ray_Nginx)
+    - [x] [Client](/0173_Tools_Networks_Proxy_V2Ray_Client)
+    - [x] [Troubleshooting](/0174_Tools_Networks_Proxy_V2Ray_Troubleshooting)
+- 日志与启动信息
+  - [x] [Logs 对照](/0136_Logs)
+  - [x] [系统 log](/0127_Tools_OS_log)
+  - [x] [启动信息](/0061_Tools_OS_ShowBootInfo)
+  - [ ] rsyslog
+  - [ ] logrotate
+  - [ ] dmesg
+  - [ ] last 与 lastb
+- 时间与主机
+  - [x] [hostname](/0072_Tools_OS_hostname)
+  - [x] [wall](/0115_Tools_OS_wall)
+  - [x] [write](/0116_Tools_OS_write)
+  - [ ] 时区与 timedatectl
+  - [ ] NTP 与 chrony
+- 硬件信息
+  - [x] [OS 工具总览](/0122_Tools_OS)
+  - [x] [硬件信息](/0068_Tools_OS_HardwareInfo)
+  - [ ] lscpu lsmem lsblk
+  - [ ] lspci lsusb
+  - [ ] dmidecode
+  - [ ] sensors 温度
+- 桌面与外设
+  - [x] [桌面总览](/0057_Desktop)
+  - [x] [GNOME](/0118_Desktop_GNOME)
+  - [x] [KDE](/0117_Desktop_KDE)
+  - [x] [安装桌面](/0094_Ubuntu_InstallDesktop)
+  - [x] [桌面显示问题](/0095_Ubuntu_Issues_DesktopDisplay)
+  - [x] [xset](/0008_Tools_OS_xset)
+  - [x] [键盘 tab 延迟](/0126_Ubuntu_Issues_tabdelay)
+  - [x] [USB 耳机无声](/0096_Ubuntu_Issues_USBHeadphoneNoSound)
+  - [x] [前置耳机无声](/0101_Ubuntu_Issues_FrontHeadPhoneNotWorking)
+  - [x] [Google 拼音](/0090_Ubuntu_InstallGooglePinyin)
+  - [x] [Steam](/0063_Ubuntu_InstallSteam)
+  - [ ] X11 与 Wayland
+  - [ ] 显示管理器
+- 安全
+  - [x] [Security 总览](/0123_Security)
+  - [x] [PAM 认证](/0065_Security_PAM)
+  - [ ] ACL
+  - [ ] SELinux 与 AppArmor
+  - [ ] 防火墙与 fail2ban
+  - [ ] 系统加固
+  - [ ] 审计 auditd
+- 备份与恢复
+  - [x] [rsync](/0044_Tools_Remote_rsync)
+  - [ ] tar 备份
+  - [ ] 快照
+  - [ ] 系统恢复与救援模式
+- 常见问题
+  - [x] [Ubuntu 问题总览](/0121_Ubuntu_Issues)
+- 容器与虚拟化
+  - [ ] Docker 基础
+  - [ ] 镜像与容器
+  - [ ] Docker 网络与存储
+  - [ ] KVM 与 QEMU
+  - [ ] libvirt
+
+## 4 性能与排错
+
+- 方法
+  - [ ] USE 方法
+  - [ ] 延迟与吞吐
+  - [ ] 排错流程
+  - [ ] 基线与对比
+  - [ ] 负载与 load average
+  - [ ] 采样与追踪的区别
+- 全局观测
+  - [x] [top](/0009_Tools_Process_top)
+  - [x] [iostat](/0045_Tools_OS_iostat)
+  - [x] [sar](/0048_Tools_Networks_sar)
+  - [x] [netdata](/0108_Tools_OS_netdata)
+  - [x] [watch](/0098_Tools_OS_watch)
+  - [ ] uptime
+  - [ ] vmstat
+  - [ ] mpstat
+  - [ ] pidstat
+  - [ ] htop 与 btop
+- CPU
+  - [ ] CPU 使用率分解 us sy wa
+  - [ ] 上下文切换
+  - [ ] 运行队列与调度延迟
+  - [ ] CPU 频率与功耗 turbostat
+  - [ ] CPU 缓存与 perf 计数器
+- 内存
+  - [x] [Memory 指标](/0125_Tools_OS_Memory)
+  - [ ] free 与 available
+  - [ ] slabtop
+  - [ ] smem
+  - [ ] 内存泄漏排查
+  - [ ] valgrind
+  - [ ] OOM 分析
+  - [ ] cgroup 内存限制
+  - [ ] 内存带宽测试
+- 磁盘与 I/O
+  - [ ] iostat 详解
+  - [ ] iotop
+  - [ ] blktrace
+  - [ ] 文件系统缓存与 drop_caches
+  - [ ] fio
+- 网络
+  - [x] [网络性能工具](/0106_Tools_Networks_PerformanceTools)
+  - [ ] ss 详解
+  - [ ] sar 网络指标
+  - [ ] iperf
+  - [ ] tcpdump 排错
+  - [ ] 丢包与重传分析
+- 基准测试
+  - [x] [Benchmark](/0129_Tools_Benchmark)
+  - [ ] sysbench
+  - [ ] stress-ng
+  - [ ] Phoronix Test Suite
+  - [ ] 基准测试的注意事项
+- 剖析
+  - [ ] perf stat
+  - [ ] perf record 与 report
+  - [ ] perf top
+  - [ ] 火焰图
+  - [ ] off-CPU 分析
+  - [ ] Intel VTune
+- 追踪
+  - [ ] strace
+  - [ ] ltrace
+  - [ ] ftrace 与 trace-cmd
+  - [ ] uprobe 与 kprobe
+  - [ ] eBPF 与 bpftrace
+  - [ ] BCC 工具集
+- 崩溃分析
+  - [ ] core dump
+  - [ ] gdb 调试
+  - [ ] kdump 与 crash
+  - [ ] 死锁与卡死排查
+
+## 5 内核基础
+
+- 内核与版本
+  - [x] [Kernel 概览](/0013_Linux_Kernel)
+  - [x] [设置默认内核](/0114_Ubuntu_SetDefaultKernel)
+  - [x] [内核升级](/0073_Tools_OS_KernelUpgrade)
+  - [ ] 内核源码树结构
+  - [ ] 内核版本与 LTS
+  - [ ] 内核配置 menuconfig
+  - [ ] 编译与安装内核
+  - [ ] 内核启动参数
+  - [ ] sysctl 参数
+  - [ ] proc 与 sys 文件系统
+- 启动流程
+  - [x] [启动信息](/0061_Tools_OS_ShowBootInfo)
+  - [ ] UEFI 与 BIOS
+  - [ ] GRUB
+  - [ ] initramfs
+  - [ ] init 与 systemd
+- 系统调用
+  - [ ] 用户态与内核态
+  - [ ] 系统调用路径
+  - [ ] vDSO
+  - [ ] seccomp
+- 进程与线程
+  - [ ] task_struct
+  - [ ] fork exec clone
+  - [ ] 线程与 futex
+  - [ ] 信号机制
+  - [ ] 进程的虚拟地址空间
+- 调度
+  - [x] [chrt](/0012_Tools_chrt)
+  - [x] [taskset](/0034_Tools_Process_taskset)
+  - [ ] CFS 与 EEVDF
+  - [ ] 实时调度 FIFO RR DEADLINE
+  - [ ] 抢占模型
+  - [ ] CPU 亲和与 NUMA 调度
+  - [ ] cgroup CPU 控制
+- 中断与时间
+  - [ ] 硬中断与软中断
+  - [ ] tasklet 与 workqueue
+  - [ ] 时钟与定时器
+  - [ ] hrtimer
+- 内存管理
+  - [x] [增加 Swap](/0083_Ubuntu_IncreaseSwap)
+  - [ ] 虚拟内存与页表
+  - [ ] 缺页异常
+  - [ ] 伙伴系统与 slab
+  - [ ] 页缓存
+  - [ ] 内存回收与 kswapd
+  - [ ] 交换与 zswap
+  - [ ] 大页与透明大页
+  - [ ] NUMA
+  - [ ] mmap 与 brk
+  - [ ] OOM killer
+- 文件系统与存储
+  - [x] [File System](/0064_FileSystem)
+  - [x] [LVM](/0131_Linux_LVM)
+  - [ ] VFS
+  - [ ] inode 与 dentry
+  - [ ] 页缓存与写回
+  - [ ] ext4 实现
+  - [ ] 块层与 I/O 调度
+  - [ ] NVMe
+  - [ ] device mapper
+- 网络协议栈
+  - [ ] sk_buff
+  - [ ] socket 与 TCP
+  - [ ] netfilter 与 iptables
+  - [ ] epoll
+  - [ ] io_uring
+  - [ ] 网络设备与 NAPI
+- IPC
+  - [x] [IPC 总览](/0086_Linux_IPC)
+  - [x] [POSIX 与 System V](/0082_Linux_POSIX与SystemV)
+  - [x] [共享内存](/0087_Linux_IPC_SharedMemory)
+  - [x] [信号量](/0088_Linux_IPC_Semaphore)
+  - [ ] 管道与 FIFO
+  - [ ] 消息队列
+  - [ ] Unix domain socket
+- 同步与并发
+  - [ ] 自旋锁与互斥锁
+  - [ ] RCU
+  - [ ] 原子操作与内存屏障
+  - [ ] 死锁与 lockdep
+- 容器基础
+  - [ ] namespace
+  - [ ] cgroup v2
+  - [ ] capabilities
+  - [ ] chroot 与 pivot_root
+- 安全机制
+  - [ ] LSM
+  - [ ] SELinux 与 AppArmor 原理
+  - [ ] 内核加固
+- 追踪基础设施
+  - [ ] tracepoint
+  - [ ] ftrace 原理
+  - [ ] perf events
+  - [ ] eBPF 原理
+
+## 6 驱动与内核开发
+
+- 驱动概览
+  - [x] [Driver 概览](/0005_Driver)
+  - [ ] 字符设备 块设备 网络设备
+  - [ ] 用户态驱动
+- 内核模块
+  - [ ] 最小内核模块
+  - [ ] insmod rmmod modprobe
+  - [ ] 模块参数
+  - [ ] 模块依赖与导出符号
+  - [ ] DKMS
+- 字符设备
+  - [ ] file_operations
+  - [ ] cdev 与设备号
+  - [ ] ioctl
+  - [ ] copy_to_user 与 copy_from_user
+  - [ ] poll 与 select
+  - [ ] mmap 驱动
+- 设备模型
+  - [ ] kobject 与 sysfs
+  - [ ] 总线 设备 驱动
+  - [ ] platform 驱动
+  - [ ] udev 规则
+  - [ ] 设备树
+  - [ ] ACPI
+- 硬件接口
+  - [ ] 中断处理
+  - [ ] DMA
+  - [ ] I2C
+  - [ ] SPI
+  - [ ] GPIO
+  - [ ] PCIe
+  - [ ] USB 驱动
+  - [ ] 电源管理
+  - [ ] 固件加载
+- 多媒体与显示
+  - [ ] V4L2 框架
+  - [ ] V4L2 相机驱动
+  - [ ] ISP 驱动
+  - [ ] DRM 与 KMS
+  - [ ] ALSA 音频
+  - [ ] framebuffer
+- 显卡与加速器
+  - [x] [NVIDIA 驱动](/0110_Ubuntu_Issues_NVIDIAGPUDriver)
+  - [ ] Intel GPU i915 与 xe
+  - [ ] Intel Media Driver 与 VA-API
+  - [ ] 计算加速器框架
+- 内核调试
+  - [ ] printk 与 dmesg
+  - [ ] dynamic debug
+  - [ ] kprobe 与 ftrace
+  - [ ] oops 与 panic 分析
+  - [ ] kgdb
+  - [ ] QEMU 调试内核
+  - [ ] KASAN 与 lockdep
+- 内核开发流程
+  - [ ] 代码风格 checkpatch
+  - [ ] git 与补丁
+  - [ ] 邮件列表与 send-email
+  - [ ] kselftest
+  - [ ] Rust for Linux
+- 嵌入式构建
+  - [x] [Yocto](/0084_Linux_Yocto)
+  - [x] [Yocto 静态 IP](/0085_Linux_Yocto_SetStaticIP)
+  - [ ] Buildroot
+  - [ ] U-Boot
+  - [ ] BSP

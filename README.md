@@ -39,6 +39,16 @@ https://junxnone.github.io/jstools/mdmark-markmap/?md=your_markdown_url
 - [demo](https://junxnone.github.io/jstools/mdmark-markmap/?md=https://junxnone.github.io/jstools/mdmark-markmap/test)
 
 
+## Markdown Fishbone
+
+```
+https://junxnone.github.io/jstools/mdfishbone/?md=your_markdown_url
+```
+
+- 用 `##` 标题 (层次) 和嵌套的复选清单 (主题与条目) 描述一份路线图，渲染成鱼骨图，格式说明见 [mdfishbone/README.md](mdfishbone/README.md)
+- [demo](https://junxnone.github.io/jstools/mdfishbone/?md=https://junxnone.github.io/jstools/mdfishbone/test.md&base=https://junxnone.github.io/linux/%23)
+
+
 ## Mermaid Viewer
 
 ```

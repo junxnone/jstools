@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>mdfishbone</title>
+<style>
+  :root { --done:#b7e4c7; --done-b:#2d6a4f; --todo:#ffe699; --todo-b:#bf9000; --bone:#3b5bdb; }
+  * { box-sizing: border-box; }
+  body { margin:0; padding:16px 20px 40px; font:13px/1.5 -apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif; color:#222; background:#fafbfc; }
+  h1 { font-size:20px; margin:0 0 6px; }
+  .bar { display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:14px; color:#555; }
+  .bar button { border:1px solid #adb5bd; background:#fff; padding:3px 10px; border-radius:12px; cursor:pointer; font-size:12px; }
+  .bar button.on { background:var(--bone); color:#fff; border-color:var(--bone); }
+  .lg { display:inline-block; padding:0 8px; border-radius:10px; border:1px solid; font-size:12px; }
+  .lg.done { background:var(--done); border-color:var(--done-b); }
+  .lg.todo { background:var(--todo); border-color:var(--todo-b); }
+  .wrap { overflow-x:auto; }
+  .board { position:relative; padding:84px 0 44px 100px; max-width:1180px; }
+  .slot { padding:0 0 30px 0; }
+  .block { border-left:4px solid var(--bone); padding:6px 0 6px 14px; position:relative; margin-left:6px; }
+  .lv { display:inline-block; background:var(--bone); color:#fff; font-weight:bold; font-size:14px; padding:3px 12px; border-radius:14px; margin:0 0 8px -28px; }
+  .lv small { font-weight:normal; opacity:.85; margin-left:6px; }
+  .grp { position:relative; display:flex; gap:10px; margin:0 0 5px 0; padding-left:14px; }
+  .grp::before { content:""; position:absolute; left:-14px; top:11px; width:22px; border-top:2px solid var(--bone); opacity:.55; }
+  .gname { font-weight:600; color:#1c2f7a; flex:0 0 150px; }
+  .items { display:flex; flex-wrap:wrap; gap:3px 4px; flex:1; }
+  .chip { display:inline-block; padding:0 7px; border-radius:9px; border:1px solid; font-size:12px; line-height:19px; text-decoration:none; color:#222; white-space:nowrap; }
+  .chip.done { background:var(--done); border-color:var(--done-b); }
+  .chip.done:hover { background:#95d5b2; }
+  .chip.todo { background:var(--todo); border-color:var(--todo-b); }
+  .head { position:absolute; left:6px; top:14px; white-space:nowrap; background:var(--bone); color:#fff; font-weight:bold; padding:10px 16px; border-radius:30px 30px 8px 8px; z-index:2; text-align:center; }
+  svg.lines { position:absolute; left:0; top:0; pointer-events:none; z-index:1; }
+  .hint { margin-top:10px; color:#888; font-size:12px; }
+  /* 手机等窄屏: 缩短鱼骨，让各层次的竖线离主干更近，条目上下排列省宽度 */
+  @media (max-width: 640px) {
+    body { padding:12px 10px 30px; }
+    .board { padding-left:40px; max-width:none; }
+    .block { margin-left:4px; padding-left:10px; }
+    .lv { margin-left:-20px; font-size:13px; }
+    .grp { flex-direction:column; gap:3px; padding-left:12px; }
+    .grp::before { left:-10px; width:16px; }
+    .gname { flex:none; }
+    .head { font-size:13px; padding:8px 12px; }
+  }
+</style>
+</head>
+<body>
+<h1 id="title"></h1>
+<div class="bar">
+  <span><span class="lg done" id="lgdone">已创建</span></span>
+  <span><span class="lg todo" id="lgtodo">未创建</span></span>
+  <div style="flex-basis:100%"><span>选择 md：<button type="button" id="pick">选择文件</button><input type="file" id="file" accept=".md,.txt" hidden></span> <span id="msg" class="hint" style="margin:0 0 0 12px"></span></div>
+</div>
+<div class="wrap"><div class="board" id="board"></div></div>
+<div class="hint">所有内容都来自 md 文件：「# 」行是标题，「## 」行是一个层次 (一根骨)，一级无复选框的列表项是主题 (短横线)，带 [x] / [ ] 的列表项是条目。页面本身不含任何内容：用 ?md=文件地址 读取 md (不传时读同目录下的 test.md)，也可以选择或拖入本地 md 文件；?base=链接前缀 (URL 参数) 用来补全 md 里以 / 开头的站内链接。</div>
+
+<script>
+let DOC_TITLE = "";
+const BASE = (new URLSearchParams(location.search).get("base") || "").trim(); // ?base=: 补全 md 里以 / 开头的链接
+let LEVELS = [];
+let SLANT = 1; // 骨从主脊向右下斜出
+const SLANT_ANGLE = 45; // 斜骨与主干 (竖线) 的夹角 (度)，越大骨越平
+
+function parse(md) {
+  const levels = []; let cur = null, grp = null, parent = null; DOC_TITLE = "";
+  for (const line of md.split(/\r?\n/)) {
+    if (!DOC_TITLE && /^# /.test(line)) { DOC_TITLE = line.slice(2).trim(); continue; }
+    if (/^## /.test(line)) { cur = { title: line.slice(3).trim(), groups: [] }; levels.push(cur); grp = parent = null; continue; }
+    if (!cur) continue;
+    const m = line.match(/^(\s*)- (\[([ xX])\]\s+)?(.*)$/);
+    if (!m) continue;
+    const depth = Math.floor(m[1].length / 2), isItem = !!m[2], text = m[4].trim();
+    if (!isItem) {
+      if (depth === 0) { grp = { name: text, items: [] }; parent = grp; }
+      else { grp = { name: (parent ? parent.name + " / " : "") + text, items: [] }; }
+      cur.groups.push(grp);
+    } else if (grp) {
+      const lm = text.match(/^\[(.+?)\]\((.+?)\)$/);
+      const item = { done: m[3].toLowerCase() === "x", text: lm ? lm[1] : text, href: null };
+      if (lm) item.href = lm[2].startsWith("/") ? (BASE + lm[2]) : lm[2];
+      grp.items.push(item);
+    }
+  }
+  return levels;
+}
+
+function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text) e.textContent = text; return e; }
+
+function render() {
+  const board = document.getElementById("board");
+  board.innerHTML = ""; board.style.paddingTop = "";
+  let totalDone = 0, totalTodo = 0;
+  const slots = [];
+  LEVELS.forEach((lv, i) => {
+    const slot = el("div", "slot");
+    const block = el("div", "block");
+    const d = lv.groups.reduce((a, g) => a + g.items.filter(x => x.done).length, 0);
+    const t = lv.groups.reduce((a, g) => a + g.items.filter(x => !x.done).length, 0);
+    totalDone += d; totalTodo += t;
+    const badge = el("div", "lv", lv.title);
+    badge.appendChild(el("small", "", "已创建 " + d + " / 未创建 " + t));
+    block.appendChild(badge);
+    lv.groups.forEach(g => {
+      const items = g.items.filter(x => true);
+      if (!items.length) return;
+      const gd = el("div", "grp"); gd.appendChild(el("div", "gname", g.name));
+      const box = el("div", "items");
+      items.forEach(x => {
+        let c;
+        if (x.href) { c = el("a", "chip " + (x.done ? "done" : "todo"), x.text); c.href = x.href; c.target = "_blank"; }
+        else c = el("span", "chip " + (x.done ? "done" : "todo"), x.text);
+        box.appendChild(c);
+      });
+      gd.appendChild(box); block.appendChild(gd);
+    });
+    slot.appendChild(block); board.appendChild(slot); slots.push({ slot, block, d, t });
+  });
+  const head = el("div", "head", DOC_TITLE || "end"); board.appendChild(head);
+  document.getElementById("lgdone").textContent = "已创建 " + totalDone;
+  document.getElementById("lgtodo").textContent = "未创建 " + totalTodo;
+  requestAnimationFrame(() => drawLines(board, slots, head));
+}
+
+function drawLines(board, slots, head) {
+  const old = board.querySelector("svg.lines"); if (old) old.remove();
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(NS, "svg"); svg.setAttribute("class", "lines");
+  const br = board.getBoundingClientRect();
+  svg.setAttribute("width", board.scrollWidth); svg.setAttribute("height", board.scrollHeight);
+  const padL = parseFloat(getComputedStyle(board).paddingLeft);
+  const spineX = Math.max(22, Math.round(padL * 0.46)), GREEN = "#2f9e44", YELLOW = "#fcc419", BONE = "#3b5bdb";
+  const hr = head.getBoundingClientRect();
+  const mk = (n, a) => { const e = document.createElementNS(NS, n); for (const k in a) e.setAttribute(k, a[k]); svg.appendChild(e); return e; };
+  const headBottom = hr.bottom - br.top;
+  const lastBottom = slots.length ? slots[slots.length - 1].block.getBoundingClientRect().bottom - br.top : headBottom + 20;
+  // 每个层次的斜骨在主脊上的接点: 斜骨与主干的夹角为 SLANT_ANGLE 度
+  // 第一根斜骨不能顶到鱼头：落差不够时加大顶部留白后重画，让每根骨的角度一致
+  if (slots.length) {
+    const r0 = slots[0].block.getBoundingClientRect();
+    const want = (r0.left - br.left - spineX) / Math.tan(SLANT_ANGLE * Math.PI / 180) * SLANT;
+    const deficit = headBottom + 8 - (r0.top - br.top + 16 - want);
+    if (deficit > 1) {
+      board.style.paddingTop = (parseFloat(getComputedStyle(board).paddingTop) + Math.ceil(deficit)) + "px";
+      requestAnimationFrame(() => drawLines(board, slots, head));
+      return;
+    }
+  }
+  const attach = [];
+  slots.forEach((s, i) => {
+    const r = s.block.getBoundingClientRect();
+    const x0 = r.left - br.left, y0 = r.top - br.top + 16;
+    // 接点不能高于鱼头，也不能压到上一个层次的接点 (斜得很陡时会发生)
+    const floor = i === 0 ? headBottom + 8 : attach[i - 1].ya + 24;
+    attach.push({ x0, y0, ya: Math.min(y0 - 8, Math.max(floor, y0 - (x0 - spineX) / Math.tan(SLANT_ANGLE * Math.PI / 180) * SLANT)) });
+  });
+  const pills = [];
+  // 主脊按层次分段，每段按「已创建占比」自上而下先画绿色，剩下画黄色
+  slots.forEach((s, i) => {
+    const start = i === 0 ? headBottom : attach[i].ya;
+    const end = i + 1 < slots.length ? attach[i + 1].ya : lastBottom;
+    const total = s.d + s.t, ratio = total ? s.d / total : 0, mid = start + (end - start) * ratio;
+    if (mid > start) mk("line", { x1: spineX, y1: start, x2: spineX, y2: mid, stroke: GREEN, "stroke-width": 7 });
+    if (end > mid) mk("line", { x1: spineX, y1: mid, x2: spineX, y2: end, stroke: YELLOW, "stroke-width": 7 });
+    if (total) {
+      // 在绿色与黄色的交接处标出完成比例；比例为 0 或 100% 时贴着段的端点放
+      const ly = Math.min(Math.max(mid, start + 10), end - 10), label = Math.round(ratio * 100) + "%";
+      pills.push({ y: ly, label });
+    }
+  });
+  const lastS = slots[slots.length - 1];
+  const lastDone = lastS && lastS.t === 0 && lastS.d > 0;
+  mk("polygon", { points: (spineX - 13) + "," + (lastBottom - 2) + " " + (spineX + 13) + "," + (lastBottom - 2) + " " + spineX + "," + (lastBottom + 20), fill: lastDone ? GREEN : YELLOW });
+  attach.forEach(a => {
+    mk("line", { x1: spineX, y1: a.ya, x2: a.x0, y2: a.y0, stroke: BONE, "stroke-width": 4, "stroke-linecap": "round" });
+  });
+  pills.forEach(p => {
+    mk("rect", { x: spineX - 20, y: p.y - 9, width: 40, height: 18, rx: 9, fill: "#fff", stroke: "#868e96", "stroke-width": 1 });
+    const t = mk("text", { x: spineX, y: p.y, "text-anchor": "middle", "dominant-baseline": "central", "font-size": 11, "font-weight": "bold", fill: "#333" });
+    t.textContent = p.label;
+  });
+  board.appendChild(svg);
+}
+
+function load(md, name) {
+  LEVELS = parse(md);
+  document.getElementById("title").textContent = DOC_TITLE;
+  document.title = DOC_TITLE || "mdfishbone";
+  document.getElementById("msg").textContent = LEVELS.length ? (name || "md") : "没有解析到任何二级标题层次，请检查 md 格式";
+  render();
+}
+function fromUrl(u) {
+  fetch(u).then(r => { if (!r.ok) throw new Error(r.status); return r.text(); }).then(t => load(t, u)).catch(e => {
+    document.getElementById("msg").textContent = "无法读取 " + u + " (" + e.message + ")。跨域抓取需要对方允许 CORS；双击打开本地 html 时浏览器不允许读本地文件，请用上面的「选择 md」或把 md 拖到页面上。";
+  });
+}
+document.getElementById("pick").onclick = () => document.getElementById("file").click();
+document.getElementById("file").onchange = e => { const f = e.target.files[0]; if (f) f.text().then(t => load(t, f.name)); };
+window.addEventListener("resize", () => { const board = document.getElementById("board"); if (LEVELS.length) render(); });
+const Q = new URLSearchParams(location.search);
+fromUrl(Q.get("md") || "test.md");
+document.addEventListener("dragover", e => e.preventDefault());
+document.addEventListener("drop", e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) f.text().then(t => load(t, f.name)); });
+</script>
+</body>
+</html>
